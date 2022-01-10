@@ -1,10 +1,11 @@
 package streamhub
 
 type hubOptions struct {
-	instanceName  string
-	publisherFunc PublisherFunc
-	marshaler     Marshaler
-	idFactory     IDFactoryFunc
+	instanceName   string
+	publisherFunc  PublisherFunc
+	marshaler      Marshaler
+	idFactory      IDFactoryFunc
+	schemaRegistry SchemaRegistry
 }
 
 // HubOption enabled interoperability as it sets a specific configuration to a Hub instance.
@@ -64,4 +65,17 @@ func (o idFactoryOption) apply(opts *hubOptions) {
 // WithIDFactory sets the default unique identifier factory of a Hub instance.
 func WithIDFactory(f IDFactoryFunc) HubOption {
 	return idFactoryOption{IDFactory: f}
+}
+
+type schemaRegistryOption struct {
+	SchemaRegistry SchemaRegistry
+}
+
+func (o schemaRegistryOption) apply(opts *hubOptions) {
+	opts.schemaRegistry = o.SchemaRegistry
+}
+
+// WithSchemaRegistry sets the schema registry of a Hub instance for stream message schema definitions.
+func WithSchemaRegistry(r SchemaRegistry) HubOption {
+	return schemaRegistryOption{SchemaRegistry: r}
 }

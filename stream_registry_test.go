@@ -8,7 +8,7 @@ import (
 )
 
 type fooMessage struct {
-	Foo string
+	Foo string `json:"foo" avro:"foo"`
 }
 
 var streamRegistrySetSuite = []struct {

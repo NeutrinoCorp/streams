@@ -67,7 +67,7 @@ var newMessageSuite = []struct {
 			Type:            "com.streamhub.foo-stream.v0",
 			Data:            []byte("foo"),
 			DataContentType: "application/json",
-			DataSchema:      "foo_stream#0",
+			DataSchema:      "foo_stream#v0",
 		},
 	},
 	{
@@ -90,7 +90,7 @@ var newMessageSuite = []struct {
 			Type:            "com.streamhub.foo-stream.v4",
 			Data:            []byte("foo"),
 			DataContentType: "application/json",
-			DataSchema:      "foo_stream#4",
+			DataSchema:      "foo_stream#v4",
 		},
 	},
 }
@@ -110,9 +110,7 @@ func TestNewMessage(t *testing.T) {
 			if tt.In.ContentType != "" {
 				assert.Equal(t, tt.Exp.DataContentType, exp.DataContentType)
 			}
-			if tt.In.Metadata.SchemaDefinition != "" {
-				assert.Equal(t, tt.Exp.DataSchema, exp.DataSchema)
-			}
+			assert.Equal(t, tt.Exp.DataSchema, exp.DataSchema)
 			assert.NotEmpty(t, exp.Time)
 		})
 	}

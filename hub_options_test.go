@@ -42,3 +42,12 @@ func TestWithIDFactory(t *testing.T) {
 		streamhub.WithIDFactory(streamhub.UuidIdFactory))
 	assert.IsType(t, streamhub.UuidIdFactory, hub.IDFactory)
 }
+
+func TestWithSchemaRegistry(t *testing.T) {
+	hub := streamhub.NewHub()
+	assert.Nil(t, hub.SchemaRegistry)
+
+	hub = streamhub.NewHub(
+		streamhub.WithSchemaRegistry(streamhub.NoopSchemaRegistry{}))
+	assert.IsType(t, streamhub.NoopSchemaRegistry{}, hub.SchemaRegistry)
+}

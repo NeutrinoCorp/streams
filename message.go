@@ -50,7 +50,7 @@ func NewMessage(args NewMessageArgs) Message {
 		Type:            generateMessageType(args.Source, args.Metadata.Stream, strSchemaVersion),
 		Data:            args.Data,
 		DataContentType: args.ContentType,
-		DataSchema:      args.Metadata.SchemaDefinition + "#" + strSchemaVersion,
+		DataSchema:      generateMessageSchema(args.Metadata.SchemaDefinition, strSchemaVersion),
 		Time:            time.Now().UTC().Format(time.RFC3339),
 	}
 }
@@ -67,4 +67,11 @@ func generateMessageType(source, stream, version string) string {
 		buff.WriteString(version)
 	}
 	return buff.String()
+}
+
+func generateMessageSchema(schemaDef, version string) string {
+	if schemaDef == "" {
+		return ""
+	}
+	return schemaDef + "#v" + version
 }

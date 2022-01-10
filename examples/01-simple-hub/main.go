@@ -8,16 +8,14 @@ import (
 )
 
 type StudentSignedUp struct {
-	StudentID  string
-	SignedUpAt time.Time
+	StudentID  string    `json:"student_id" avro:"student_id"`
+	SignedUpAt time.Time `json:"signed_up_at" avro:"signed_up_at"`
 }
 
 func main() {
 	hub := streamhub.NewHub()
 	hub.StreamRegistry.Set(StudentSignedUp{}, streamhub.StreamMetadata{
-		Stream:           "student-signed_up",
-		SchemaDefinition: "./schemas/student-signed_up.avsc",
-		SchemaVersion:    1,
+		Stream: "student-signed_up",
 	})
 
 	err := hub.Publish(context.Background(), StudentSignedUp{

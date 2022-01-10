@@ -1,6 +1,8 @@
 package streamhub
 
-import "context"
+import (
+	"context"
+)
 
 // PublisherFunc inserts a message into a stream assigned to the message in the StreamRegistry in order to propagate the
 // data to a set of subscribed systems for further processing.
@@ -13,7 +15,7 @@ type Publisher interface {
 	Publish(ctx context.Context, message Message) error
 }
 
-// NoopPublisher is the no-operation implementation of PublishMessageFunc
+// NoopPublisher is the no-operation implementation of PublisherFunc
 var NoopPublisher PublisherFunc = func(ctx context.Context, message Message) error {
 	return nil
 }
