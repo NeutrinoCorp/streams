@@ -55,6 +55,8 @@ func (h *Hub) RegisterStreamByString(messageType string, metadata StreamMetadata
 
 // Publish inserts a message into a stream assigned to the message in the StreamRegistry in order to propagate the
 // data to a set of subscribed systems for further processing.
+//
+// Uses given context to inject correlation and causation IDs.
 func (h *Hub) Publish(ctx context.Context, message interface{}) error {
 	metadata, err := h.StreamRegistry.Get(message)
 	if err != nil {
@@ -65,6 +67,8 @@ func (h *Hub) Publish(ctx context.Context, message interface{}) error {
 
 // PublishByMessageKey inserts a message into a stream using the custom message key from StreamRegistry in order to
 // propagate the data to a set of subscribed systems for further processing.
+//
+// Uses given context to inject correlation and causation IDs.
 func (h *Hub) PublishByMessageKey(ctx context.Context, messageKey string, message interface{}) error {
 	metadata, err := h.StreamRegistry.GetByString(messageKey)
 	if err != nil {
@@ -93,7 +97,7 @@ func (h *Hub) publishMessage(ctx context.Context, metadata StreamMetadata, messa
 		return err
 	}
 
-	return h.PublisherFunc(ctx, NewMessage(NewMessageArgs{
+	return h.PublishRawMessage(ctx, NewMessage(NewMessageArgs{
 		SchemaVersion:    metadata.SchemaVersion,
 		Data:             data,
 		ID:               id,
@@ -106,6 +110,11 @@ func (h *Hub) publishMessage(ctx context.Context, metadata StreamMetadata, messa
 
 // PublishRawMessage inserts a raw transport message into a stream in order to propagate the data to a set
 // of subscribed systems for further processing.
+//
+// Uses given context to inject correlation and causation IDs.
 func (h *Hub) PublishRawMessage(ctx context.Context, message Message) error {
+	// TODO: Add publisher over publisherFunc functionality
+	message.CorrelationID = InjectMessageCorrelationID(ctx, message.ID)
+	message.CausationID = InjectMessageCausationID(ctx, message.ID)
 	return h.PublisherFunc(ctx, message)
 }

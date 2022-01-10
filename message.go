@@ -28,6 +28,10 @@ type Message struct {
 	DataContentType string `json:"datacontenttype,omitempty"`
 	DataSchema      string `json:"dataschema,omitempty"`
 	Time            string `json:"time,omitempty"`
+
+	// Streamhub fields
+	CorrelationID string `json:"correlation_id"`
+	CausationID   string `json:"causation_id"`
 }
 
 // NewMessageArgs arguments required by NewMessage function to operate.
