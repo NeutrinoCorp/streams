@@ -19,7 +19,7 @@ func main() {
 	})
 
 	err := hub.Publish(context.Background(), StudentSignedUp{
-		StudentID:  "1",
+		StudentID:  "2",
 		SignedUpAt: time.Now().UTC(),
 	})
 	if err != nil {
