@@ -1,2 +1,2 @@
 # :envelope: Streamhub
-Streamhub is the toolkit specially crafted for your streaming-powered applications written in Go.
+Streamhub is a toolkit crafted for streaming-powered applications written in Go.
