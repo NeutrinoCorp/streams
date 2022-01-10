@@ -32,6 +32,26 @@ func TestJSONMarshaler_ContentType(t *testing.T) {
 	assert.Equal(t, "application/json", m.ContentType())
 }
 
+func BenchmarkJSONMarshaler_Marshal(b *testing.B) {
+	msg := fooMessage{Foo: "foo"}
+	m := streamhub.JSONMarshaler{}
+	for i := 0; i < b.N; i++ {
+		b.ReportAllocs()
+		_, _ = m.Marshal("", msg)
+	}
+}
+
+func BenchmarkJSONMarshaler_Unmarshal(b *testing.B) {
+	msg := fooMessage{Foo: "foo"}
+	m := streamhub.JSONMarshaler{}
+	data, _ := m.Marshal("", msg)
+	ref := &fooMessage{}
+	for i := 0; i < b.N; i++ {
+		b.ReportAllocs()
+		_ = m.Unmarshal("", data, ref)
+	}
+}
+
 func TestAvroMarshaler_Marshal(t *testing.T) {
 	msg := fooMessage{Foo: "foo"}
 	m := streamhub.AvroMarshaler{}
@@ -79,4 +99,41 @@ func TestAvroMarshaler_Unmarshal(t *testing.T) {
 func TestAvroMarshaler_ContentType(t *testing.T) {
 	m := streamhub.AvroMarshaler{}
 	assert.Equal(t, "application/avro", m.ContentType())
+}
+
+func BenchmarkAvroMarshaler_Marshal(b *testing.B) {
+	msg := fooMessage{Foo: "foo"}
+	m := streamhub.AvroMarshaler{}
+
+	for i := 0; i < b.N; i++ {
+		b.ReportAllocs()
+		_, _ = m.Marshal(`{
+			"type": "record",
+			"name": "fooMessage",
+			"namespace": "org.ncorp.avro",
+			"fields" : [
+				{"name": "foo", "type": "string"}
+			]
+		}`, msg)
+	}
+}
+
+func BenchmarkAvroMarshaler_Unmarshal(b *testing.B) {
+	def := `{
+			"type": "record",
+			"name": "fooMessage",
+			"namespace": "org.ncorp.avro",
+			"fields" : [
+				{"name": "foo", "type": "string"}
+			]
+		}`
+	msg := fooMessage{Foo: "foo"}
+	m := streamhub.AvroMarshaler{}
+	data, _ := m.Marshal(def, msg)
+
+	ref := &fooMessage{}
+	for i := 0; i < b.N; i++ {
+		b.ReportAllocs()
+		_ = m.Unmarshal(def, data, ref)
+	}
 }

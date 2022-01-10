@@ -32,25 +32,27 @@ type Message struct {
 
 // NewMessageArgs arguments required by NewMessage function to operate.
 type NewMessageArgs struct {
-	Data        []byte
-	ID          string
-	Source      string
-	Metadata    StreamMetadata
-	ContentType string
+	SchemaVersion    int
+	Data             []byte
+	ID               string
+	Source           string
+	Stream           string
+	SchemaDefinition string
+	ContentType      string
 }
 
 // NewMessage allocates an immutable Message ready to be transported in a stream.
 func NewMessage(args NewMessageArgs) Message {
-	strSchemaVersion := strconv.Itoa(args.Metadata.SchemaVersion)
+	strSchemaVersion := strconv.Itoa(args.SchemaVersion)
 	return Message{
 		ID:              args.ID,
-		Stream:          args.Metadata.Stream,
+		Stream:          args.Stream,
 		Source:          args.Source,
 		SpecVersion:     CloudEventsSpecVersion,
-		Type:            generateMessageType(args.Source, args.Metadata.Stream, strSchemaVersion),
+		Type:            generateMessageType(args.Source, args.Stream, strSchemaVersion),
 		Data:            args.Data,
 		DataContentType: args.ContentType,
-		DataSchema:      generateMessageSchema(args.Metadata.SchemaDefinition, strSchemaVersion),
+		DataSchema:      generateMessageSchema(args.SchemaDefinition, strSchemaVersion),
 		Time:            time.Now().UTC().Format(time.RFC3339),
 	}
 }

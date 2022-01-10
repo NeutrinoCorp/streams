@@ -94,10 +94,18 @@ func (h *Hub) publishMessage(ctx context.Context, metadata StreamMetadata, messa
 	}
 
 	return h.PublisherFunc(ctx, NewMessage(NewMessageArgs{
-		Data:        data,
-		ID:          id,
-		Source:      h.InstanceName,
-		Metadata:    metadata,
-		ContentType: h.Marshaler.ContentType(),
+		SchemaVersion:    metadata.SchemaVersion,
+		Data:             data,
+		ID:               id,
+		Source:           h.InstanceName,
+		Stream:           metadata.Stream,
+		SchemaDefinition: metadata.SchemaDefinition,
+		ContentType:      h.Marshaler.ContentType(),
 	}))
+}
+
+// PublishRawMessage inserts a raw transport message into a stream in order to propagate the data to a set
+// of subscribed systems for further processing.
+func (h *Hub) PublishRawMessage(ctx context.Context, message Message) error {
+	return h.PublisherFunc(ctx, message)
 }

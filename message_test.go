@@ -17,11 +17,13 @@ var newMessageSuite = []struct {
 	},
 	{
 		In: streamhub.NewMessageArgs{
-			Data:        []byte("foo"),
-			ID:          "",
-			Source:      "",
-			Metadata:    streamhub.StreamMetadata{},
-			ContentType: "",
+			SchemaVersion:    0,
+			Data:             []byte("foo"),
+			ID:               "",
+			Source:           "",
+			Stream:           "",
+			SchemaDefinition: "",
+			ContentType:      "",
 		},
 		Exp: streamhub.Message{
 			Data: []byte("foo"),
@@ -29,11 +31,13 @@ var newMessageSuite = []struct {
 	},
 	{
 		In: streamhub.NewMessageArgs{
-			Data:        []byte("foo"),
-			ID:          "123",
-			Source:      "com.streamhub",
-			Metadata:    streamhub.StreamMetadata{},
-			ContentType: "application/json",
+			SchemaVersion:    0,
+			Data:             []byte("foo"),
+			ID:               "123",
+			Source:           "com.streamhub",
+			Stream:           "",
+			SchemaDefinition: "",
+			ContentType:      "application/json",
 		},
 		Exp: streamhub.Message{
 			ID:              "123",
@@ -49,15 +53,13 @@ var newMessageSuite = []struct {
 	},
 	{
 		In: streamhub.NewMessageArgs{
-			Data:   []byte("foo"),
-			ID:     "123",
-			Source: "com.streamhub",
-			Metadata: streamhub.StreamMetadata{
-				Stream:           "foo-stream",
-				SchemaDefinition: "foo_stream",
-				SchemaVersion:    0,
-			},
-			ContentType: "application/json",
+			SchemaVersion:    0,
+			Data:             []byte("foo"),
+			ID:               "123",
+			Source:           "com.streamhub",
+			Stream:           "foo-stream",
+			SchemaDefinition: "foo_stream",
+			ContentType:      "application/json",
 		},
 		Exp: streamhub.Message{
 			ID:              "123",
@@ -72,15 +74,13 @@ var newMessageSuite = []struct {
 	},
 	{
 		In: streamhub.NewMessageArgs{
-			Data:   []byte("foo"),
-			ID:     "123",
-			Source: "com.streamhub",
-			Metadata: streamhub.StreamMetadata{
-				Stream:           "foo-stream",
-				SchemaDefinition: "foo_stream",
-				SchemaVersion:    4,
-			},
-			ContentType: "application/json",
+			SchemaVersion:    4,
+			Data:             []byte("foo"),
+			ID:               "123",
+			Source:           "com.streamhub",
+			Stream:           "foo-stream",
+			SchemaDefinition: "foo_stream",
+			ContentType:      "application/json",
 		},
 		Exp: streamhub.Message{
 			ID:              "123",
@@ -103,7 +103,7 @@ func TestNewMessage(t *testing.T) {
 			assert.Equal(t, tt.Exp.Stream, exp.Stream)
 			assert.Equal(t, tt.Exp.Source, exp.Source)
 			assert.Equal(t, streamhub.CloudEventsSpecVersion, exp.SpecVersion)
-			if tt.In.Source != "" && tt.In.Metadata.Stream != "" {
+			if tt.In.Source != "" && tt.In.Stream != "" {
 				assert.Equal(t, tt.Exp.Type, exp.Type)
 			}
 			assert.Equal(t, tt.Exp.Data, exp.Data)
@@ -112,6 +112,21 @@ func TestNewMessage(t *testing.T) {
 			}
 			assert.Equal(t, tt.Exp.DataSchema, exp.DataSchema)
 			assert.NotEmpty(t, exp.Time)
+		})
+	}
+}
+
+func BenchmarkNewMessage(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		b.ReportAllocs()
+		_ = streamhub.NewMessage(streamhub.NewMessageArgs{
+			SchemaVersion:    9,
+			Data:             []byte("hello there"),
+			ID:               "1",
+			Source:           "",
+			Stream:           "bar-stream",
+			SchemaDefinition: "",
+			ContentType:      "",
 		})
 	}
 }
