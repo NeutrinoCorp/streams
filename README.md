@@ -3,7 +3,6 @@
 ![Go Build](https://github.com/neutrinocorp/streamhub/workflows/Testing/badge.svg?branch=master)
 [![GoDoc](https://pkg.go.dev/badge/github.com/neutrinocorp/streamhub)][godocs]
 [![Go Report Card](https://goreportcard.com/badge/github.com/neutrinocorp/streamhub)](https://goreportcard.com/report/github.com/neutrinocorp/streamhub)
-[![codebeat badge](https://codebeat.co/badges/22d865b6-c99a-469a-bb85-6b2d6f44a6fe)](https://codebeat.co/projects/github-com-neutrinocorp-streamhub-master)
 [![Coverage Status][cov-img]][cov]
 [![Go Version][go-img]][go]
 
