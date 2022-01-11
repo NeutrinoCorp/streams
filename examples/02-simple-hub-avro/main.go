@@ -15,7 +15,7 @@ type StudentSignedUp struct {
 func main() {
 	hub := streamhub.NewHub(
 		streamhub.WithSchemaRegistry(setupSchemaRegistry()),
-		streamhub.WithMarshaler(streamhub.AvroMarshaler{}))
+		streamhub.WithMarshaler(streamhub.NewAvroMarshaler()))
 	hub.StreamRegistry.Set(StudentSignedUp{}, streamhub.StreamMetadata{
 		Stream:           "student-signed_up",
 		SchemaDefinition: "student-signed_up",

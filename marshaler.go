@@ -1,6 +1,8 @@
 package streamhub
 
 import (
+	"hash/fnv"
+
 	"github.com/hamba/avro"
 	jsoniter "github.com/json-iterator/go"
 )
@@ -38,27 +40,74 @@ func (m JSONMarshaler) ContentType() string {
 // AvroMarshaler handles data transformation between primitives and Apache Avro format.
 //
 // Apache Avro REQUIRES a defined SchemaRegistry to decode/encode data.
-type AvroMarshaler struct{}
+type AvroMarshaler struct {
+	cache map[uint64]avro.Schema
+}
+
+func NewAvroMarshaler() AvroMarshaler {
+	return AvroMarshaler{
+		cache: map[uint64]avro.Schema{},
+	}
+}
 
 var _ Marshaler = AvroMarshaler{}
 
 // Marshal transforms a complex data type into a primitive binary array for data transportation using Apache Avro format.
-func (a AvroMarshaler) Marshal(schemaDef string, data interface{}) ([]byte, error) {
-	schemaAvro, err := avro.Parse(schemaDef)
-	if err != nil {
-		return nil, err
+func (a AvroMarshaler) Marshal(schemaDef string, data interface{}) (parsedData []byte, err error) {
+	var schemaAvro avro.Schema
+	if a.cache != nil {
+		var ok bool
+		hashingAlgorithm := fnv.New64a()
+		_, err = hashingAlgorithm.Write([]byte(schemaDef))
+		if err != nil {
+			return nil, err
+		}
+		hashKey := hashingAlgorithm.Sum64()
+		schemaAvro, ok = a.cache[hashKey]
+		defer func(specFound bool) {
+			if !ok {
+				a.cache[hashKey] = schemaAvro
+			}
+		}(ok)
 	}
-	return avro.Marshal(schemaAvro, data)
 
+	if schemaAvro == nil {
+		schemaAvro, err = avro.Parse(schemaDef)
+		if err != nil {
+			return nil, err
+		}
+	}
+	parsedData, err = avro.Marshal(schemaAvro, data)
+	return
 }
 
 // Unmarshal transforms a primitive binary array to a complex data type for data processing using Apache Avro format.
-func (a AvroMarshaler) Unmarshal(schemaDef string, data []byte, ref interface{}) error {
-	schemaAvro, err := avro.Parse(schemaDef)
-	if err != nil {
-		return err
+func (a AvroMarshaler) Unmarshal(schemaDef string, data []byte, ref interface{}) (err error) {
+	var schemaAvro avro.Schema
+	if a.cache != nil {
+		var ok bool
+		hashingAlgorithm := fnv.New64a()
+		_, err = hashingAlgorithm.Write([]byte(schemaDef))
+		if err != nil {
+			return err
+		}
+		hashKey := hashingAlgorithm.Sum64()
+		schemaAvro, ok = a.cache[hashKey]
+		defer func(specFound bool) {
+			if !ok {
+				a.cache[hashKey] = schemaAvro
+			}
+		}(ok)
 	}
-	return avro.Unmarshal(schemaAvro, data, ref)
+
+	if schemaAvro == nil {
+		schemaAvro, err = avro.Parse(schemaDef)
+		if err != nil {
+			return err
+		}
+	}
+	err = avro.Unmarshal(schemaAvro, data, ref)
+	return
 }
 
 // ContentType retrieves the encoding/decoding Apache Avro format using RFC 2046 standard (application/avro).

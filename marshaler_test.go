@@ -54,7 +54,7 @@ func BenchmarkJSONMarshaler_Unmarshal(b *testing.B) {
 
 func TestAvroMarshaler_Marshal(t *testing.T) {
 	msg := fooMessage{Foo: "foo"}
-	m := streamhub.AvroMarshaler{}
+	m := streamhub.NewAvroMarshaler()
 	data, err := m.Marshal("", msg)
 	assert.Nil(t, data)
 	assert.Error(t, err)
@@ -81,7 +81,7 @@ func TestAvroMarshaler_Unmarshal(t *testing.T) {
 		]
 	}`
 	msg := fooMessage{Foo: "foo"}
-	m := streamhub.AvroMarshaler{}
+	m := streamhub.NewAvroMarshaler()
 	data, err := m.Marshal(def, msg)
 	assert.NotNil(t, data)
 	assert.NoError(t, err)
@@ -103,7 +103,7 @@ func TestAvroMarshaler_ContentType(t *testing.T) {
 
 func BenchmarkAvroMarshaler_Marshal(b *testing.B) {
 	msg := fooMessage{Foo: "foo"}
-	m := streamhub.AvroMarshaler{}
+	m := streamhub.NewAvroMarshaler()
 
 	for i := 0; i < b.N; i++ {
 		b.ReportAllocs()
@@ -128,7 +128,7 @@ func BenchmarkAvroMarshaler_Unmarshal(b *testing.B) {
 			]
 		}`
 	msg := fooMessage{Foo: "foo"}
-	m := streamhub.AvroMarshaler{}
+	m := streamhub.NewAvroMarshaler()
 	data, _ := m.Marshal(def, msg)
 
 	ref := &fooMessage{}
