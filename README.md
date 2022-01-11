@@ -1,6 +1,6 @@
 # :envelope: Streamhub
 
-![Go Build](https://github.com/neutrinocorp/streamhub/workflows/Testing/badge.svg?branch=master)
+![Go Build](https://github.com/NeutrinoCorp/streamhub/actions/workflows/go-testing.yml/badge.svg)
 [![GoDoc](https://pkg.go.dev/badge/github.com/neutrinocorp/streamhub)][godocs]
 [![Go Report Card](https://goreportcard.com/badge/github.com/neutrinocorp/streamhub)](https://goreportcard.com/report/github.com/neutrinocorp/streamhub)
 [![Coverage Status][cov-img]][cov]
