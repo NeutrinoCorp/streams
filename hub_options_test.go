@@ -18,11 +18,20 @@ func TestWithInstanceName(t *testing.T) {
 
 func TestWithPublisherFunc(t *testing.T) {
 	hub := streamhub.NewHub()
-	assert.IsType(t, streamhub.NoopPublisher, hub.PublisherFunc)
+	assert.IsType(t, streamhub.NoopPublisherFunc, hub.PublisherFunc)
 
 	hub = streamhub.NewHub(
-		streamhub.WithPublisherFunc(streamhub.NoopPublisher))
-	assert.IsType(t, streamhub.NoopPublisher, hub.PublisherFunc)
+		streamhub.WithPublisherFunc(streamhub.NoopPublisherFunc))
+	assert.IsType(t, streamhub.NoopPublisherFunc, hub.PublisherFunc)
+}
+
+func TestWithPublisher(t *testing.T) {
+	hub := streamhub.NewHub()
+	assert.Nil(t, hub.Publisher)
+
+	hub = streamhub.NewHub(
+		streamhub.WithPublisher(streamhub.NoopPublisher))
+	assert.IsType(t, streamhub.NoopPublisher, hub.Publisher)
 }
 
 func TestWithMarshaler(t *testing.T) {

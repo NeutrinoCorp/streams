@@ -12,7 +12,7 @@ var ErrMissingSchemaDefinition = errors.New("streamhub: Missing stream schema de
 //
 // Examples of this schema registries are Amazon Glue Schema Registry and Confluent Schema Registry.
 type SchemaRegistry interface {
-	// GetSchemaDefinition retrieves the schema definition in string format.
+	// GetSchemaDefinition retrieves a schema definition (in string format) from the registry
 	GetSchemaDefinition(name string, version int) (string, error)
 }
 
@@ -21,6 +21,7 @@ type NoopSchemaRegistry struct{}
 
 var _ SchemaRegistry = NoopSchemaRegistry{}
 
+// GetSchemaDefinition retrieves an empty string and a nil error
 func (n NoopSchemaRegistry) GetSchemaDefinition(_ string, _ int) (string, error) {
 	return "", nil
 }
@@ -30,6 +31,7 @@ type InMemorySchemaRegistry map[string]string
 
 var _ SchemaRegistry = InMemorySchemaRegistry{}
 
+// RegisterDefinition stores the given schema definition into the registry
 func (i InMemorySchemaRegistry) RegisterDefinition(name, def string, version int) {
 	key := name
 	if version > 0 {
@@ -38,6 +40,7 @@ func (i InMemorySchemaRegistry) RegisterDefinition(name, def string, version int
 	i[key] = def
 }
 
+// GetSchemaDefinition retrieves a schema definition (in string format) from the registry
 func (i InMemorySchemaRegistry) GetSchemaDefinition(name string, version int) (string, error) {
 	key := name
 	if version > 0 {

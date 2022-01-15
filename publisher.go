@@ -15,7 +15,17 @@ type Publisher interface {
 	Publish(ctx context.Context, message Message) error
 }
 
-// NoopPublisher is the no-operation implementation of PublisherFunc
-var NoopPublisher PublisherFunc = func(ctx context.Context, message Message) error {
+// NoopPublisherFunc is the no-operation implementation of PublisherFunc
+var NoopPublisherFunc PublisherFunc = func(ctx context.Context, message Message) error {
+	return nil
+}
+
+type noopPublisher struct{}
+
+// NoopPublisher is the no-operation implementation of Publisher
+var NoopPublisher Publisher = noopPublisher{}
+
+// Publish is the no-operation implementation of Publisher.Publish()
+func (n noopPublisher) Publish(_ context.Context, _ Message) error {
 	return nil
 }

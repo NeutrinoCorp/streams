@@ -9,8 +9,9 @@ const DefaultHubInstanceName = "com.streamhub"
 
 // Hub is the main component which enables interactions between several systems through the usage of streams.
 type Hub struct {
-	StreamRegistry StreamRegistry
 	InstanceName   string
+	StreamRegistry StreamRegistry
+	Publisher      Publisher
 	PublisherFunc  PublisherFunc
 	Marshaler      Marshaler
 	IDFactory      IDFactoryFunc
@@ -27,6 +28,7 @@ func NewHub(opts ...HubOption) *Hub {
 		StreamRegistry: StreamRegistry{},
 		InstanceName:   baseOpts.instanceName,
 		Marshaler:      baseOpts.marshaler,
+		Publisher:      baseOpts.publisher,
 		PublisherFunc:  baseOpts.publisherFunc,
 		IDFactory:      baseOpts.idFactory,
 		SchemaRegistry: baseOpts.schemaRegistry,
@@ -37,7 +39,7 @@ func NewHub(opts ...HubOption) *Hub {
 func newHubDefaults() hubOptions {
 	return hubOptions{
 		instanceName:  DefaultHubInstanceName,
-		publisherFunc: NoopPublisher,
+		publisherFunc: NoopPublisherFunc,
 		marshaler:     JSONMarshaler{},
 		idFactory:     UuidIdFactory,
 	}
@@ -113,8 +115,10 @@ func (h *Hub) publishMessage(ctx context.Context, metadata StreamMetadata, messa
 //
 // Uses given context to inject correlation and causation IDs.
 func (h *Hub) PublishRawMessage(ctx context.Context, message Message) error {
-	// TODO: Add publisher over publisherFunc functionality
 	message.CorrelationID = InjectMessageCorrelationID(ctx, message.ID)
 	message.CausationID = InjectMessageCausationID(ctx, message.ID)
+	if h.Publisher != nil {
+		return h.Publisher.Publish(ctx, message)
+	}
 	return h.PublisherFunc(ctx, message)
 }

@@ -44,6 +44,8 @@ type AvroMarshaler struct {
 	cache map[uint64]avro.Schema
 }
 
+// NewAvroMarshaler allocates a new Apache Avro marshaler with a simple caching system to reduce memory footprint and
+// computational usage when parsing Avro schema definition files.
 func NewAvroMarshaler() AvroMarshaler {
 	return AvroMarshaler{
 		cache: map[uint64]avro.Schema{},

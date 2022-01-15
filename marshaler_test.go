@@ -1,11 +1,28 @@
 package streamhub_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/neutrinocorp/streamhub"
 	"github.com/stretchr/testify/assert"
 )
+
+type failingFakeMarshaler struct{}
+
+var _ streamhub.Marshaler = failingFakeMarshaler{}
+
+func (f failingFakeMarshaler) Marshal(_ string, _ interface{}) ([]byte, error) {
+	return nil, errors.New("generic marshal error")
+}
+
+func (f failingFakeMarshaler) Unmarshal(_ string, _ []byte, _ interface{}) error {
+	return errors.New("generic unmarshal error")
+}
+
+func (f failingFakeMarshaler) ContentType() string {
+	return ""
+}
 
 func TestJSONMarshaler_Marshal(t *testing.T) {
 	msg := fooMessage{Foo: "foo"}
