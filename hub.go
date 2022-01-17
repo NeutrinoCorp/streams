@@ -85,28 +85,31 @@ func (h *Hub) publishMessage(ctx context.Context, metadata StreamMetadata, messa
 	schemaDef := ""
 	var err error
 	if h.SchemaRegistry != nil {
-		schemaDef, err = h.SchemaRegistry.GetSchemaDefinition(metadata.SchemaDefinition, metadata.SchemaVersion)
+		schemaDef, err = h.SchemaRegistry.GetSchemaDefinition(metadata.SchemaDefinitionName,
+			metadata.SchemaVersion)
 		if err != nil {
 			return err
 		}
 	}
+
 	data, err := h.Marshaler.Marshal(schemaDef, message)
 	if err != nil {
 		return err
 	}
+
 	id, err := h.IDFactory()
 	if err != nil {
 		return err
 	}
 
 	return h.PublishRawMessage(ctx, NewMessage(NewMessageArgs{
-		SchemaVersion:    metadata.SchemaVersion,
-		Data:             data,
-		ID:               id,
-		Source:           h.InstanceName,
-		Stream:           metadata.Stream,
-		SchemaDefinition: metadata.SchemaDefinition,
-		ContentType:      h.Marshaler.ContentType(),
+		SchemaVersion:        metadata.SchemaVersion,
+		Data:                 data,
+		ID:                   id,
+		Source:               h.InstanceName,
+		Stream:               metadata.Stream,
+		SchemaDefinitionName: metadata.SchemaDefinitionName,
+		ContentType:          h.Marshaler.ContentType(),
 	}))
 }
 
