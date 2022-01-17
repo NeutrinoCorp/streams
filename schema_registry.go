@@ -3,6 +3,7 @@ package streamhub
 import (
 	"errors"
 	"strconv"
+	"strings"
 )
 
 // ErrMissingSchemaDefinition the requested stream message definition was not found in the SchemaRegistry
@@ -42,11 +43,13 @@ func (i InMemorySchemaRegistry) RegisterDefinition(name, def string, version int
 
 // GetSchemaDefinition retrieves a schema definition (in string format) from the registry
 func (i InMemorySchemaRegistry) GetSchemaDefinition(name string, version int) (string, error) {
-	key := name
+	buffKey := strings.Builder{}
+	buffKey.WriteString(name)
 	if version > 0 {
-		key += "#" + strconv.Itoa(version)
+		buffKey.WriteString("#")
+		buffKey.WriteString(strconv.Itoa(version))
 	}
-	def, ok := i[key]
+	def, ok := i[buffKey.String()]
 	if !ok {
 		return "", ErrMissingSchemaDefinition
 	}

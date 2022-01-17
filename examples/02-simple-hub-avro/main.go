@@ -16,10 +16,10 @@ func main() {
 	hub := streamhub.NewHub(
 		streamhub.WithSchemaRegistry(setupSchemaRegistry()),
 		streamhub.WithMarshaler(streamhub.NewAvroMarshaler()))
-	hub.StreamRegistry.Set(studentSignedUp{}, streamhub.StreamMetadata{
-		Stream:           "student-signed_up",
-		SchemaDefinition: "student-signed_up",
-		SchemaVersion:    1,
+	hub.RegisterStream(studentSignedUp{}, streamhub.StreamMetadata{
+		Stream:               "student-signed_up",
+		SchemaDefinitionName: "student-signed_up",
+		SchemaVersion:        1,
 	})
 
 	err := hub.Publish(context.Background(), studentSignedUp{

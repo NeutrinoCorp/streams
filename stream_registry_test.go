@@ -24,8 +24,8 @@ var streamRegistrySetSuite = []struct {
 	{
 		InMsg: fooMessage{},
 		InMeta: streamhub.StreamMetadata{
-			Stream:           "foo-stream",
-			SchemaDefinition: "",
+			Stream:               "foo-stream",
+			SchemaDefinitionName: "",
 		},
 		Err: nil,
 	},
@@ -56,16 +56,16 @@ var streamRegistrySetByStringSuite = []struct {
 	{
 		InMsgKey: "foo",
 		InMeta: streamhub.StreamMetadata{
-			Stream:           "foo-stream",
-			SchemaDefinition: "",
+			Stream:               "foo-stream",
+			SchemaDefinitionName: "",
 		},
 		Err: nil,
 	},
 	{
 		InMsgKey: "bar",
 		InMeta: streamhub.StreamMetadata{
-			Stream:           "foo-stream",
-			SchemaDefinition: "",
+			Stream:               "foo-stream",
+			SchemaDefinitionName: "",
 		},
 		Err: nil,
 	},
@@ -104,8 +104,8 @@ var streamRegistryGetByStringSuite = []struct {
 func TestStreamRegistry_GetByString(t *testing.T) {
 	registry := streamhub.StreamRegistry{}
 	registry.Set(fooMessage{}, streamhub.StreamMetadata{
-		Stream:           "foo-stream",
-		SchemaDefinition: "./streams-schemas/foo.avsc",
+		Stream:               "foo-stream",
+		SchemaDefinitionName: "./streams-schemas/foo.avsc",
 	})
 	for _, tt := range streamRegistryGetByStringSuite {
 		t.Run("", func(t *testing.T) {

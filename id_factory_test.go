@@ -17,3 +17,10 @@ func TestGenerateUUID(t *testing.T) {
 	assert.NotEmpty(t, id)
 	assert.NoError(t, err)
 }
+
+func BenchmarkGenerateUUID(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		b.ReportAllocs()
+		_, _ = streamhub.UuidIdFactory()
+	}
+}

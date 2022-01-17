@@ -14,9 +14,11 @@ type studentSignedUp struct {
 
 func main() {
 	hub := streamhub.NewHub()
-	hub.StreamRegistry.Set(studentSignedUp{}, streamhub.StreamMetadata{
+	hub.RegisterStream(studentSignedUp{}, streamhub.StreamMetadata{
 		Stream: "student-signed_up",
 	})
+
+	hub.ListenStream(studentSignedUp{})
 
 	err := hub.Publish(context.Background(), studentSignedUp{
 		StudentID:  "2",

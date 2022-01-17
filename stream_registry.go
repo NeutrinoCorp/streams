@@ -10,9 +10,9 @@ var ErrMissingStream = errors.New("streamhub: Missing stream entry in stream reg
 
 // StreamMetadata contains information of stream messages.
 type StreamMetadata struct {
-	Stream           string
-	SchemaDefinition string
-	SchemaVersion    int
+	Stream               string
+	SchemaDefinitionName string
+	SchemaVersion        int
 }
 
 // StreamRegistry is an in-memory storage of message metadata used by Hub and any external agent to set and

@@ -17,13 +17,13 @@ var newMessageSuite = []struct {
 	},
 	{
 		In: streamhub.NewMessageArgs{
-			SchemaVersion:    0,
-			Data:             []byte("foo"),
-			ID:               "",
-			Source:           "",
-			Stream:           "",
-			SchemaDefinition: "",
-			ContentType:      "",
+			SchemaVersion:        0,
+			Data:                 []byte("foo"),
+			ID:                   "",
+			Source:               "",
+			Stream:               "",
+			SchemaDefinitionName: "",
+			ContentType:          "",
 		},
 		Exp: streamhub.Message{
 			Data: []byte("foo"),
@@ -31,13 +31,13 @@ var newMessageSuite = []struct {
 	},
 	{
 		In: streamhub.NewMessageArgs{
-			SchemaVersion:    0,
-			Data:             []byte("foo"),
-			ID:               "123",
-			Source:           "com.streamhub",
-			Stream:           "",
-			SchemaDefinition: "",
-			ContentType:      "application/json",
+			SchemaVersion:        0,
+			Data:                 []byte("foo"),
+			ID:                   "123",
+			Source:               "com.streamhub",
+			Stream:               "",
+			SchemaDefinitionName: "",
+			ContentType:          "application/json",
 		},
 		Exp: streamhub.Message{
 			ID:              "123",
@@ -53,13 +53,13 @@ var newMessageSuite = []struct {
 	},
 	{
 		In: streamhub.NewMessageArgs{
-			SchemaVersion:    0,
-			Data:             []byte("foo"),
-			ID:               "123",
-			Source:           "com.streamhub",
-			Stream:           "foo-stream",
-			SchemaDefinition: "foo_stream",
-			ContentType:      "application/json",
+			SchemaVersion:        0,
+			Data:                 []byte("foo"),
+			ID:                   "123",
+			Source:               "com.streamhub",
+			Stream:               "foo-stream",
+			SchemaDefinitionName: "foo_stream",
+			ContentType:          "application/json",
 		},
 		Exp: streamhub.Message{
 			ID:              "123",
@@ -74,13 +74,13 @@ var newMessageSuite = []struct {
 	},
 	{
 		In: streamhub.NewMessageArgs{
-			SchemaVersion:    4,
-			Data:             []byte("foo"),
-			ID:               "123",
-			Source:           "com.streamhub",
-			Stream:           "foo-stream",
-			SchemaDefinition: "foo_stream",
-			ContentType:      "application/json",
+			SchemaVersion:        4,
+			Data:                 []byte("foo"),
+			ID:                   "123",
+			Source:               "com.streamhub",
+			Stream:               "foo-stream",
+			SchemaDefinitionName: "foo_stream",
+			ContentType:          "application/json",
 		},
 		Exp: streamhub.Message{
 			ID:              "123",
@@ -117,16 +117,17 @@ func TestNewMessage(t *testing.T) {
 }
 
 func BenchmarkNewMessage(b *testing.B) {
+	data := []byte("hello there")
 	for i := 0; i < b.N; i++ {
 		b.ReportAllocs()
 		_ = streamhub.NewMessage(streamhub.NewMessageArgs{
-			SchemaVersion:    9,
-			Data:             []byte("hello there"),
-			ID:               "1",
-			Source:           "",
-			Stream:           "bar-stream",
-			SchemaDefinition: "",
-			ContentType:      "",
+			SchemaVersion:        9,
+			Data:                 data,
+			ID:                   "1",
+			Source:               "",
+			Stream:               "bar-stream",
+			SchemaDefinitionName: "",
+			ContentType:          "",
 		})
 	}
 }

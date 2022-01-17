@@ -10,7 +10,7 @@ type Listener interface {
 	Listen(ctx context.Context, message []byte) error
 }
 
-// ListenFunc is the execution process triggered when a message is received from a stream.
+// ListenerFunc is the execution process triggered when a message is received from a stream.
 //
 // Returns an error to indicate the process has failed so Hub will retry the processing using exponential backoff.
-type ListenFunc func(ctx context.Context, message []byte) error
+type ListenerFunc func(ctx context.Context, message []byte) error

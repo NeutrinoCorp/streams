@@ -36,13 +36,13 @@ type Message struct {
 
 // NewMessageArgs arguments required by NewMessage function to operate.
 type NewMessageArgs struct {
-	SchemaVersion    int
-	Data             []byte
-	ID               string
-	Source           string
-	Stream           string
-	SchemaDefinition string
-	ContentType      string
+	SchemaVersion        int
+	Data                 []byte
+	ID                   string
+	Source               string
+	Stream               string
+	SchemaDefinitionName string
+	ContentType          string
 }
 
 // NewMessage allocates an immutable Message ready to be transported in a stream.
@@ -56,7 +56,7 @@ func NewMessage(args NewMessageArgs) Message {
 		Type:            generateMessageType(args.Source, args.Stream, strSchemaVersion),
 		Data:            args.Data,
 		DataContentType: args.ContentType,
-		DataSchema:      generateMessageSchema(args.SchemaDefinition, strSchemaVersion),
+		DataSchema:      generateMessageSchema(args.SchemaDefinitionName, strSchemaVersion),
 		Time:            time.Now().UTC().Format(time.RFC3339),
 	}
 }

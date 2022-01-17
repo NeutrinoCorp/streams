@@ -9,7 +9,7 @@ type hubOptions struct {
 	schemaRegistry SchemaRegistry
 }
 
-// HubOption enabled interoperability as it sets a specific configuration to a Hub instance.
+// HubOption enables configuration of a Hub instance.
 type HubOption interface {
 	apply(*hubOptions)
 }
