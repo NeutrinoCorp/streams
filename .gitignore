@@ -16,3 +16,6 @@
 
 # IDE and code editor files
 .idea
+
+# Benchmarks
+*.pprof

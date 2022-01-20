@@ -48,7 +48,7 @@ type AvroMarshaler struct {
 // computational usage when parsing Avro schema definition files.
 func NewAvroMarshaler() AvroMarshaler {
 	return AvroMarshaler{
-		cache: map[uint64]avro.Schema{},
+		cache: make(map[uint64]avro.Schema, 0),
 	}
 }
 

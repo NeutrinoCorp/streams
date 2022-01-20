@@ -36,14 +36,18 @@ var _ SchemaRegistry = InMemorySchemaRegistry{}
 func (i InMemorySchemaRegistry) RegisterDefinition(name, def string, version int) {
 	key := name
 	if version > 0 {
-		key += "#" + strconv.Itoa(version)
+		var buff strings.Builder
+		buff.WriteString(key)
+		buff.WriteString("#")
+		buff.WriteString(strconv.Itoa(version))
+		key = buff.String()
 	}
 	i[key] = def
 }
 
 // GetSchemaDefinition retrieves a schema definition (in string format) from the registry
 func (i InMemorySchemaRegistry) GetSchemaDefinition(name string, version int) (string, error) {
-	buffKey := strings.Builder{}
+	var buffKey strings.Builder
 	buffKey.WriteString(name)
 	if version > 0 {
 		buffKey.WriteString("#")

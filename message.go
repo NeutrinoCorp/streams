@@ -27,7 +27,7 @@ type Message struct {
 
 	DataContentType string `json:"datacontenttype,omitempty"`
 	DataSchema      string `json:"dataschema,omitempty"`
-	Time            string `json:"time,omitempty"`
+	Timestamp       int64  `json:"timestamp,omitempty"`
 
 	// Streamhub fields
 	CorrelationID string `json:"correlation_id"`
@@ -57,12 +57,12 @@ func NewMessage(args NewMessageArgs) Message {
 		Data:            args.Data,
 		DataContentType: args.ContentType,
 		DataSchema:      generateMessageSchema(args.SchemaDefinitionName, strSchemaVersion),
-		Time:            time.Now().UTC().Format(time.RFC3339),
+		Timestamp:       time.Now().Unix(),
 	}
 }
 
 func generateMessageType(source, stream, version string) string {
-	buff := strings.Builder{}
+	var buff strings.Builder
 	if source != "" {
 		buff.WriteString(source)
 		buff.WriteString(".")
@@ -79,5 +79,9 @@ func generateMessageSchema(schemaDef, version string) string {
 	if schemaDef == "" {
 		return ""
 	}
-	return schemaDef + "#v" + version
+	var buff strings.Builder
+	buff.WriteString(schemaDef)
+	buff.WriteString("#v")
+	buff.WriteString(version)
+	return buff.String()
 }

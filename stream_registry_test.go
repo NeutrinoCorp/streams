@@ -1,6 +1,7 @@
 package streamhub_test
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/neutrinocorp/streamhub"
@@ -112,5 +113,54 @@ func TestStreamRegistry_GetByString(t *testing.T) {
 			_, err := registry.GetByString(tt.In)
 			assert.Equal(t, tt.Err, err)
 		})
+	}
+}
+
+func BenchmarkStreamRegistry_Set(b *testing.B) {
+	registry := streamhub.StreamRegistry{}
+	for i := 0; i < b.N; i++ {
+		b.ReportAllocs()
+		registry.Set(fooMessage{}, streamhub.StreamMetadata{
+			Stream:               "foo-stream",
+			SchemaDefinitionName: "./streams-schemas/foo.avsc",
+		})
+	}
+}
+
+func BenchmarkStreamRegistry_SetByString(b *testing.B) {
+	registry := streamhub.StreamRegistry{}
+	for i := 0; i < b.N; i++ {
+		key := "foo" + strconv.Itoa(i)
+		b.ReportAllocs()
+		registry.SetByString(key, streamhub.StreamMetadata{
+			Stream:               "foo-stream",
+			SchemaDefinitionName: "./streams-schemas/foo.avsc",
+		})
+	}
+}
+
+func BenchmarkStreamRegistry_Get(b *testing.B) {
+	registry := streamhub.StreamRegistry{}
+	registry.Set(fooMessage{}, streamhub.StreamMetadata{
+		Stream:               "foo-stream",
+		SchemaDefinitionName: "./streams-schemas/foo.avsc",
+	})
+
+	for i := 0; i < b.N; i++ {
+		b.ReportAllocs()
+		_, _ = registry.Get(fooMessage{})
+	}
+}
+
+func BenchmarkStreamRegistry_GetByString(b *testing.B) {
+	registry := streamhub.StreamRegistry{}
+	registry.SetByString("foo-stream", streamhub.StreamMetadata{
+		Stream:               "foo-stream",
+		SchemaDefinitionName: "./streams-schemas/foo.avsc",
+	})
+
+	for i := 0; i < b.N; i++ {
+		b.ReportAllocs()
+		_, _ = registry.GetByString("foo-stream")
 	}
 }

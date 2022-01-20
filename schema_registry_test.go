@@ -43,3 +43,45 @@ func TestInMemorySchemaRegistry(t *testing.T) {
 	assert.ErrorIs(t, err, streamhub.ErrMissingSchemaDefinition)
 	assert.Empty(t, def)
 }
+
+func BenchmarkInMemorySchemaRegistry_GetSchemaDefinition(b *testing.B) {
+	r := streamhub.InMemorySchemaRegistry{}
+	r.RegisterDefinition("foo", `{
+		"type": "record",
+		"name": "foo",
+		"namespace": "org.ncorp.avro",
+		"fields" : [
+			{"name": "a", "type": "long"},
+			{"name": "b", "type": "string"}
+		]
+	}`, 0)
+	r.RegisterDefinition("bar", `{
+		"type": "record",
+		"name": "bar",
+		"namespace": "org.ncorp.avro",
+		"fields" : [
+			{"name": "a", "type": "long"},
+			{"name": "b", "type": "string"}
+		]
+	}`, 1)
+	for i := 0; i < b.N; i++ {
+		b.ReportAllocs()
+		_, _ = r.GetSchemaDefinition("foo", 0)
+	}
+}
+
+func BenchmarkInMemorySchemaRegistry_RegisterDefinition(b *testing.B) {
+	r := streamhub.InMemorySchemaRegistry{}
+	for i := 0; i < b.N; i++ {
+		b.ReportAllocs()
+		r.RegisterDefinition("foo", `{
+		"type": "record",
+		"name": "foo",
+		"namespace": "org.ncorp.avro",
+		"fields" : [
+			{"name": "a", "type": "long"},
+			{"name": "b", "type": "string"}
+			]
+		}`, i)
+	}
+}

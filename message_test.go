@@ -48,7 +48,7 @@ var newMessageSuite = []struct {
 			Data:            []byte("foo"),
 			DataContentType: "application/json",
 			DataSchema:      "",
-			Time:            "",
+			Timestamp:       0,
 		},
 	},
 	{
@@ -111,7 +111,7 @@ func TestNewMessage(t *testing.T) {
 				assert.Equal(t, tt.Exp.DataContentType, exp.DataContentType)
 			}
 			assert.Equal(t, tt.Exp.DataSchema, exp.DataSchema)
-			assert.NotEmpty(t, exp.Time)
+			assert.NotEmpty(t, exp.Timestamp)
 		})
 	}
 }
