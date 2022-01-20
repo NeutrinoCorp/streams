@@ -18,7 +18,13 @@ func main() {
 		Stream: "student-signed_up",
 	})
 
-	hub.ListenStream(studentSignedUp{})
+	_ = hub.Listen(studentSignedUp{},
+		streamhub.WithConsumerGroup("example-job-on-student-signed_up"),
+		streamhub.WithListenerFunc(func(ctx context.Context, message streamhub.Message) error {
+			return nil
+		}))
+	hub.ListenByStreamKey("student-signed_up",
+		streamhub.WithProviderConfiguration(nil))
 
 	err := hub.Publish(context.Background(), studentSignedUp{
 		StudentID:  "2",
