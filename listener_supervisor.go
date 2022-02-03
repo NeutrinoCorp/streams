@@ -68,10 +68,13 @@ func (s *listenerSupervisor) newHandlerFuncWrapper(baseOpts listenerNodeOptions)
 	}
 	return func(ctx context.Context, message Message) error {
 		// - Retry backoff
-		// - Logging
-		// - Metrics
-		// - Tracing
 		// - Correlation and causation ID injection
+		// - Unmarshalling*
+		// - Logging*
+		// - Metrics*
+		// - Tracing*
+		//
+		// * Optional
 		message.GroupName = baseOpts.group
 		var handler ListenerNodeHandler
 		if baseOpts.listener != nil {

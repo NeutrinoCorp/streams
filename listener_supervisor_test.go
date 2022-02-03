@@ -52,6 +52,6 @@ func TestListenerSupervisor_StartNodes(t *testing.T) {
 	sv.startNodes(baseCtx)
 
 	assert.Equal(t, 4, runtime.NumGoroutine())
-	time.Sleep(time.Millisecond * 10)
+	time.Sleep(time.Millisecond * 100)
 	assert.Equal(t, 2, runtime.NumGoroutine())
 }

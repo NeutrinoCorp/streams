@@ -55,13 +55,10 @@ func (b *Bus) start(ctx context.Context) {
 		}
 	}()
 	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				close(b.messageBuffer)
-				return
-			default:
-			}
+		select {
+		case <-ctx.Done():
+			close(b.messageBuffer)
+			return
 		}
 	}()
 	b.startedBus = true

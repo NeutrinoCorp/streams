@@ -20,17 +20,19 @@ func TestListenerNode_Start(t *testing.T) {
 	}
 	node.start(baseCtx)
 	assert.Equal(t, 12, runtime.NumGoroutine())
-	time.Sleep(time.Millisecond * 10)
+	time.Sleep(time.Millisecond * 100)
 	assert.Equal(t, 2, runtime.NumGoroutine())
 
+	baseCtx2, cancelCtx2 := context.WithTimeout(context.Background(), time.Millisecond)
+	defer cancelCtx2()
 	node = listenerNode{
 		Stream:           "foo",
 		ConcurrencyLevel: 1,
 		ListenerDriver:   listenerDriverNoop{},
 	}
-	node.start(baseCtx)
+	node.start(baseCtx2)
 	assert.Equal(t, 3, runtime.NumGoroutine())
-	time.Sleep(time.Millisecond)
+	time.Sleep(time.Millisecond * 100)
 	assert.Equal(t, 2, runtime.NumGoroutine())
 }
 

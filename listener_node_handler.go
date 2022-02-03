@@ -39,11 +39,13 @@ func listenerNodeHandlerUnmarshaling(h *Hub, baseHandler ListenerNodeHandler) Li
 				return err
 			}
 		}
-		decodedData := reflect.New(metadata.GoType)
-		if err = h.Marshaler.Unmarshal(schemaDef, message.Data, decodedData.Interface()); err != nil {
-			return err
+		if metadata.GoType != nil {
+			decodedData := reflect.New(metadata.GoType)
+			if err = h.Marshaler.Unmarshal(schemaDef, message.Data, decodedData.Interface()); err != nil {
+				return err
+			}
+			message.DecodedData = decodedData
 		}
-		message.DecodedData = decodedData
 		return baseHandler(ctx, message)
 	}
 }

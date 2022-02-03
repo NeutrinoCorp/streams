@@ -160,14 +160,26 @@ processing a message.
 It is required to say that `Streamhub` adds layers of behaviour by default for every `Listener`/`ListenerFunc` forked.
 These behaviours include:
 
-- Exponential backoff retrying (_customizable_)
+- Exponential backoff retrying (_fully customizable_)
 - Correlation and Causation IDs injection into the handler-scoped context
 - Unmarshaling*
 - Logging*
 - Monitoring/Metrics*
 - Tracing*
 
-_* If available_
+_* Available if properly configured_
+
+## Supported infrastructure
+
+- Apache Kafka (on-premise, Confluent cloud or Amazon Managed Streaming for Apache Kafka/MSK)
+- Amazon Simple Notification Service (SNS) and Simple Queue Service (SQS) with the [Topic-Queue chaining pattern](https://aws.amazon.com/blogs/compute/application-integration-patterns-for-microservices-fan-out-strategies/) implementation
+- Apache Pulsar*
+- MQTT-based buses/brokers (e.g. RabbitMQ, Apache ActiveMQ)*
+- Google Cloud PubSub*
+- Microsoft Azure Service Bus*
+- Redis Streams*
+
+_* On Streamhub's roadmap, not yet implemented._
 
 [actions]: https://github.com/neutrinocorp/streamhub/workflows/Testing/badge.svg?branch=master
 [godocs]: https://pkg.go.dev/github.com/neutrinocorp/streamhub
