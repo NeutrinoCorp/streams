@@ -51,7 +51,7 @@ func (s *listenerSupervisor) forkNode(stream string, opts ...ListenerNodeOption)
 
 	s.listenerRegistry = append(s.listenerRegistry, listenerNode{
 		Stream:                stream,
-		HandlerFunc:           s.newHandlerFuncWrapper(baseOpts),
+		HandlerFunc:           s.attachDefaultBehaviours(baseOpts),
 		Group:                 baseOpts.group,
 		ProviderConfiguration: baseOpts.providerConfiguration,
 		ConcurrencyLevel:      baseOpts.concurrencyLevel,
@@ -62,31 +62,30 @@ func (s *listenerSupervisor) forkNode(stream string, opts ...ListenerNodeOption)
 	})
 }
 
-func (s *listenerSupervisor) newHandlerFuncWrapper(baseOpts listenerNodeOptions) ListenerNodeHandler {
+// Adds to stream-listening handler the following behaviours:
+// - Retry backoff
+// - Correlation and causation ID injection
+// - Unmarshalling*
+// - Logging*
+// - Metrics*
+// - Tracing*
+//
+// * Optional
+func (s *listenerSupervisor) attachDefaultBehaviours(baseOpts listenerNodeOptions) ListenerNodeHandler {
 	if baseOpts.listenerFunc == nil && baseOpts.listener == nil {
 		return nil
 	}
-	return func(ctx context.Context, message Message) error {
-		// - Retry backoff
-		// - Correlation and causation ID injection
-		// - Unmarshalling*
-		// - Logging*
-		// - Metrics*
-		// - Tracing*
-		//
-		// * Optional
-		message.GroupName = baseOpts.group
-		var handler ListenerNodeHandler
-		if baseOpts.listener != nil {
-			handler = baseOpts.listener.Listen
-		} else if baseOpts.listenerFunc != nil {
-			handler = ListenerNodeHandler(baseOpts.listenerFunc)
-		}
 
-		handler = listenerNodeHandlerRetryBackoff(baseOpts, handler)
-		handler = listenerNodeHandlerUnmarshaling(s.parentHub, handler)
-		return handler(ctx, message)
+	var handler ListenerNodeHandler
+	if baseOpts.listener != nil {
+		handler = baseOpts.listener.Listen
+	} else if baseOpts.listenerFunc != nil {
+		handler = ListenerNodeHandler(baseOpts.listenerFunc)
 	}
+	handler = retryListenerNodeBehaviour(baseOpts, handler)
+	handler = unmarshalListenerNodeBehaviour(s.parentHub, handler)
+	handler = injectGroupListenerNodeBehaviour(baseOpts, handler)
+	return handler
 }
 
 // startNodes boots up all nodes from the listenerSupervisor's ListenerRegistry.

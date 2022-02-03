@@ -2,16 +2,14 @@ package streamhub_test
 
 import (
 	"context"
+	"runtime"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/neutrinocorp/streamhub"
 	"github.com/stretchr/testify/assert"
 )
-
-func TestHub_Listen(t *testing.T) {
-
-}
 
 func TestHub_Publish(t *testing.T) {
 	hub := streamhub.NewHub(streamhub.WithSchemaRegistry(streamhub.NoopSchemaRegistry{}),
@@ -139,6 +137,48 @@ func TestHub_PublishByMessageKey(t *testing.T) {
 		Foo: "custom",
 	})
 	assert.NoError(t, err)
+}
+
+func TestHub_Listen(t *testing.T) {
+	h := streamhub.NewHub()
+	err := h.Listen(fooMessage{})
+	assert.ErrorIs(t, err, streamhub.ErrMissingStream)
+
+	h.StreamRegistry.Set(fooMessage{}, streamhub.StreamMetadata{})
+	err = h.Listen(fooMessage{})
+	assert.NoError(t, err)
+}
+
+func TestHub_Start(t *testing.T) {
+	h := streamhub.NewHub()
+
+	h.StreamRegistry.Set(fooMessage{}, streamhub.StreamMetadata{
+		Stream: "foo-stream",
+	})
+	err := h.Listen(fooMessage{})
+	assert.NoError(t, err)
+
+	baseCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
+	defer cancel()
+	h.Start(baseCtx)
+
+	// ListenerNode scheduler will not schedule if a ListenerDriver wasn't defined at either Hub (BaseListenerDriver)
+	// level or ListenerNode level
+	assert.Equal(t, 2, runtime.NumGoroutine())
+
+	h.StreamRegistry.Set(fooMessage{}, streamhub.StreamMetadata{
+		Stream: "foo-stream",
+	})
+	err = h.Listen(fooMessage{}, streamhub.WithDriver(listenerDriverNoopGoroutine{}))
+	assert.NoError(t, err)
+
+	baseCtx2, cancel2 := context.WithTimeout(context.Background(), time.Millisecond)
+	defer cancel2()
+	h.Start(baseCtx2)
+
+	assert.Equal(t, 3, runtime.NumGoroutine())
+	time.Sleep(time.Millisecond * 100)
+	assert.Equal(t, 2, runtime.NumGoroutine())
 }
 
 func BenchmarkHub_RegisterStream(b *testing.B) {

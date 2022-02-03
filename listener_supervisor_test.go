@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestListenerSupervisor_Append(t *testing.T) {
+func TestListenerSupervisor_ForkNode(t *testing.T) {
 	h := &Hub{}
 	sv := newListenerSupervisor(h, WithGroup("bar-queue"))
 	sv.forkNode("")
@@ -24,11 +24,14 @@ func TestListenerSupervisor_Append(t *testing.T) {
 	sv.forkNode("baz")
 	assert.Equal(t, "bar-queue", sv.listenerRegistry[1].Group)
 
-	sv.forkNode("foobar", WithGroup("barbaz-queue"))
+	sv.forkNode("foobar", WithGroup("barbaz-queue"), WithListenerFunc(func(ctx context.Context, message Message) error {
+		return nil
+	}))
 	assert.Equal(t, "barbaz-queue", sv.listenerRegistry[2].Group)
+	assert.NotNil(t, sv.listenerRegistry[2].HandlerFunc)
 }
 
-func BenchmarkListenerSupervisor_Append(b *testing.B) {
+func BenchmarkListenerSupervisor_ForkNode(b *testing.B) {
 	h := &Hub{}
 	sv := newListenerSupervisor(h, WithGroup("bar-queue"), WithConcurrencyLevel(10))
 	var handler ListenerFunc
@@ -46,7 +49,9 @@ func TestListenerSupervisor_StartNodes(t *testing.T) {
 	defer cancel()
 
 	h := NewHub()
-	sv := newListenerSupervisor(h, WithDriver(listenerDriverNoop{}))
+	sv := newListenerSupervisor(h, WithDriver(listenerDriverNoop{}), WithListenerFunc(func(ctx context.Context, message Message) error {
+		return nil
+	}))
 	sv.forkNode("foo")
 	sv.forkNode("foo")
 	sv.startNodes(baseCtx)

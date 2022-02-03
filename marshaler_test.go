@@ -2,6 +2,7 @@ package streamhub_test
 
 import (
 	"errors"
+	"hash"
 	"testing"
 
 	"github.com/neutrinocorp/streamhub"
@@ -76,6 +77,22 @@ func TestAvroMarshaler_Marshal(t *testing.T) {
 	assert.Nil(t, data)
 	assert.Error(t, err)
 
+	m.HashingFactory = func() hash.Hash64 {
+		return hashing64AlgorithmFailingNoop{}
+	}
+
+	data, err = m.Marshal(`{
+		"type": "record",
+		"name": "fooMessage",
+		"namespace": "org.ncorp.avro",
+		"fields" : [
+			{"name": "foo", "type": "string"}
+		]
+	}`, msg)
+	assert.Nil(t, data)
+	assert.ErrorIs(t, err, hashing64GenericError)
+
+	m.HashingFactory = streamhub.DefaultHashing64AlgorithmFactory
 	data, err = m.Marshal(`{
 		"type": "record",
 		"name": "fooMessage",
@@ -108,6 +125,14 @@ func TestAvroMarshaler_Unmarshal(t *testing.T) {
 	assert.Error(t, err)
 	assert.Empty(t, msgRef)
 
+	m.HashingFactory = func() hash.Hash64 {
+		return hashing64AlgorithmFailingNoop{}
+	}
+	err = m.Unmarshal(def, data, &msgRef)
+	assert.ErrorIs(t, err, hashing64GenericError)
+	assert.Empty(t, msgRef)
+
+	m.HashingFactory = streamhub.DefaultHashing64AlgorithmFactory
 	err = m.Unmarshal(def, data, &msgRef)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, msgRef)

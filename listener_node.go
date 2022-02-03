@@ -21,7 +21,11 @@ type listenerNode struct {
 }
 
 // start schedules all workers of a ListenerNode.
+// Note: Will not schedule if ListenerDriver was not found.
 func (n *listenerNode) start(ctx context.Context) {
+	if n.ListenerDriver == nil {
+		return
+	}
 	baseTask := newListenerTask(n)
 	for i := 0; i < n.ConcurrencyLevel; i++ {
 		// TODO: Implement logging to log errors

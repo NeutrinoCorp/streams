@@ -1,7 +1,6 @@
 package streamhub_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/neutrinocorp/streamhub"
@@ -42,15 +41,6 @@ func TestWithMarshaler(t *testing.T) {
 	hub = streamhub.NewHub(
 		streamhub.WithMarshaler(streamhub.JSONMarshaler{}))
 	assert.IsType(t, streamhub.JSONMarshaler{}, hub.Marshaler)
-}
-
-type listenerDriverNoop struct{}
-
-var _ streamhub.ListenerDriver = listenerDriverNoop{}
-
-// ExecuteTask the no-operation implementation of ListenerDriver
-func (l listenerDriverNoop) ExecuteTask(_ context.Context, _ streamhub.ListenerTask) error {
-	return nil
 }
 
 func TestWithListenerDriver(t *testing.T) {

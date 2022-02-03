@@ -1,6 +1,7 @@
 package streamhub
 
 import (
+	"hash"
 	"hash/fnv"
 
 	"github.com/hamba/avro"
@@ -41,25 +42,34 @@ func (m JSONMarshaler) ContentType() string {
 //
 // Apache Avro REQUIRES a defined SchemaRegistry to decode/encode data.
 type AvroMarshaler struct {
-	cache map[uint64]avro.Schema
+	cache          map[uint64]avro.Schema
+	HashingFactory Hashing64AlgorithmFactory
 }
 
 // NewAvroMarshaler allocates a new Apache Avro marshaler with a simple caching system to reduce memory footprint and
 // computational usage when parsing Avro schema definition files.
 func NewAvroMarshaler() AvroMarshaler {
 	return AvroMarshaler{
-		cache: make(map[uint64]avro.Schema, 0),
+		cache:          make(map[uint64]avro.Schema, 0),
+		HashingFactory: DefaultHashing64AlgorithmFactory,
 	}
 }
 
 var _ Marshaler = AvroMarshaler{}
+
+type Hashing64AlgorithmFactory func() hash.Hash64
+
+// DefaultHashing64AlgorithmFactory the default hashing64 algorithm factory for Marshaler schema definition caching layer
+var DefaultHashing64AlgorithmFactory Hashing64AlgorithmFactory = func() hash.Hash64 {
+	return fnv.New64a()
+}
 
 // Marshal transforms a complex data type into a primitive binary array for data transportation using Apache Avro format.
 func (a AvroMarshaler) Marshal(schemaDef string, data interface{}) (parsedData []byte, err error) {
 	var schemaAvro avro.Schema
 	if a.cache != nil {
 		var ok bool
-		hashingAlgorithm := fnv.New64a()
+		hashingAlgorithm := a.HashingFactory()
 		_, err = hashingAlgorithm.Write([]byte(schemaDef))
 		if err != nil {
 			return nil, err
@@ -88,7 +98,7 @@ func (a AvroMarshaler) Unmarshal(schemaDef string, data []byte, ref interface{})
 	var schemaAvro avro.Schema
 	if a.cache != nil {
 		var ok bool
-		hashingAlgorithm := fnv.New64a()
+		hashingAlgorithm := a.HashingFactory()
 		_, err = hashingAlgorithm.Write([]byte(schemaDef))
 		if err != nil {
 			return err
