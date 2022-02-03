@@ -25,6 +25,24 @@ func (f failingFakeMarshaler) ContentType() string {
 	return ""
 }
 
+func TestFailingMarshaler_ContentType(t *testing.T) {
+	m := streamhub.FailingMarshalerNoop{}
+	assert.Equal(t, m.ContentType(), "")
+}
+
+func TestFailingMarshaler_Marshal(t *testing.T) {
+	m := streamhub.FailingMarshalerNoop{}
+	bytesWritten, err := m.Marshal("", nil)
+	assert.Nil(t, bytesWritten)
+	assert.Error(t, err)
+}
+
+func TestFailingMarshaler_Unmarshal(t *testing.T) {
+	m := streamhub.FailingMarshalerNoop{}
+	err := m.Unmarshal("", nil, nil)
+	assert.Error(t, err)
+}
+
 func TestJSONMarshaler_Marshal(t *testing.T) {
 	msg := fooMessage{Foo: "foo"}
 	m := streamhub.JSONMarshaler{}

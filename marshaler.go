@@ -1,6 +1,7 @@
 package streamhub
 
 import (
+	"errors"
 	"hash"
 	"hash/fnv"
 	"sync"
@@ -17,6 +18,25 @@ type Marshaler interface {
 	Unmarshal(schemaDef string, data []byte, ref interface{}) error
 	// ContentType retrieves the encoding/decoding format using RFC 2046 standard (e.g. application/json).
 	ContentType() string
+}
+
+// FailingMarshalerNoop the no-operation failing Marshaler
+//
+// For testing purposes only
+type FailingMarshalerNoop struct{}
+
+var _ Marshaler = FailingMarshalerNoop{}
+
+func (f FailingMarshalerNoop) Marshal(_ string, _ interface{}) ([]byte, error) {
+	return nil, errors.New("failing marshal")
+}
+
+func (f FailingMarshalerNoop) Unmarshal(_ string, _ []byte, _ interface{}) error {
+	return errors.New("failing unmarshal")
+}
+
+func (f FailingMarshalerNoop) ContentType() string {
+	return ""
 }
 
 // JSONMarshaler handles data transformation between primitives and JSON format.

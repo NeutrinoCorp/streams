@@ -2,9 +2,13 @@ package shmemory
 
 import (
 	"context"
+	"errors"
 
 	"github.com/neutrinocorp/streamhub"
 )
+
+// ErrBusNotStarted The in-memory bus has not been started
+var ErrBusNotStarted = errors.New("streamhub: In-memory bus has not been started")
 
 // Publisher is the streamhub.Publisher in-memory implementation
 type Publisher struct {
@@ -20,6 +24,9 @@ func NewPublisher(b *Bus) *Publisher {
 
 // Publish pushes the given message into the internal in-memory Bus
 func (p *Publisher) Publish(_ context.Context, message streamhub.Message) error {
+	if !p.b.startedBus {
+		return ErrBusNotStarted
+	}
 	p.b.messageBuffer <- message
 	return nil
 }
