@@ -9,14 +9,14 @@ const DefaultHubInstanceName = "com.streamhub"
 
 // Hub is the main component which enables interactions between several systems through the usage of streams.
 type Hub struct {
-	InstanceName       string
-	StreamRegistry     StreamRegistry
-	Publisher          Publisher
-	PublisherFunc      PublisherFunc
-	Marshaler          Marshaler
-	IDFactory          IDFactoryFunc
-	SchemaRegistry     SchemaRegistry
-	BaseListenerDriver ListenerDriver
+	InstanceName   string
+	StreamRegistry StreamRegistry
+	Publisher      Publisher
+	PublisherFunc  PublisherFunc
+	Marshaler      Marshaler
+	IDFactory      IDFactoryFunc
+	SchemaRegistry SchemaRegistry
+	ListenerDriver ListenerDriver
 
 	listenerSupervisor *listenerSupervisor
 }
@@ -28,14 +28,14 @@ func NewHub(opts ...HubOption) *Hub {
 		o.apply(&baseOpts)
 	}
 	h := &Hub{
-		StreamRegistry:     StreamRegistry{},
-		InstanceName:       baseOpts.instanceName,
-		Marshaler:          baseOpts.marshaler,
-		Publisher:          baseOpts.publisher,
-		PublisherFunc:      baseOpts.publisherFunc,
-		IDFactory:          baseOpts.idFactory,
-		SchemaRegistry:     baseOpts.schemaRegistry,
-		BaseListenerDriver: baseOpts.driver,
+		StreamRegistry: StreamRegistry{},
+		InstanceName:   baseOpts.instanceName,
+		Marshaler:      baseOpts.marshaler,
+		Publisher:      baseOpts.publisher,
+		PublisherFunc:  baseOpts.publisherFunc,
+		IDFactory:      baseOpts.idFactory,
+		SchemaRegistry: baseOpts.schemaRegistry,
+		ListenerDriver: baseOpts.driver,
 	}
 	h.listenerSupervisor = newListenerSupervisor(h)
 	return h

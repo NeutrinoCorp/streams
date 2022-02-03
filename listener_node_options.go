@@ -7,8 +7,8 @@ type listenerNodeOptions struct {
 	listenerFunc          ListenerFunc
 	group                 string
 	concurrencyLevel      int
-	maxRetries            uint32
-	retryBackoff          time.Duration
+	retryInitialInterval  time.Duration
+	retryMaxInterval      time.Duration
 	retryTimeout          time.Duration
 	providerConfiguration interface{}
 	driver                ListenerDriver
@@ -79,31 +79,30 @@ func WithConcurrencyLevel(n int) ListenerNodeOption {
 	return concurrencyLevelOption{ConcurrencyLevel: n}
 }
 
-type maxRetriesOption struct {
-	MaxRetries uint32
+type retryInitialIntervalOption struct {
+	RetryInitialInterval time.Duration
 }
 
-func (o maxRetriesOption) apply(opts *listenerNodeOptions) {
-	opts.maxRetries = o.MaxRetries
+func (o retryInitialIntervalOption) apply(opts *listenerNodeOptions) {
+	opts.retryInitialInterval = o.RetryInitialInterval
 }
 
-// WithMaxRetries sets the maximum amount of retying tasks of a ListenerNode.
-// If overpassed, the ListenerNode will stop scheduling stream-listening tasks.
-func WithMaxRetries(n uint32) ListenerNodeOption {
-	return maxRetriesOption{MaxRetries: n}
+// WithRetryInitialInterval sets the initial duration interval for each retying tasks of a ListenerNode.
+func WithRetryInitialInterval(d time.Duration) ListenerNodeOption {
+	return retryInitialIntervalOption{RetryInitialInterval: d}
 }
 
-type retryBackoffOption struct {
-	RetryBackoff time.Duration
+type retryMaxIntervalOption struct {
+	RetryMaxInterval time.Duration
 }
 
-func (o retryBackoffOption) apply(opts *listenerNodeOptions) {
-	opts.retryBackoff = o.RetryBackoff
+func (o retryMaxIntervalOption) apply(opts *listenerNodeOptions) {
+	opts.retryMaxInterval = o.RetryMaxInterval
 }
 
-// WithRetryBackoff sets the duration interval for each retying tasks of a ListenerNode.
-func WithRetryBackoff(d time.Duration) ListenerNodeOption {
-	return retryBackoffOption{RetryBackoff: d}
+// WithRetryMaxInterval sets the maximum duration interval for each retying tasks of a ListenerNode.
+func WithRetryMaxInterval(d time.Duration) ListenerNodeOption {
+	return retryMaxIntervalOption{RetryMaxInterval: d}
 }
 
 type retryTimeoutOption struct {

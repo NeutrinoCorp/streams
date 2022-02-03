@@ -22,8 +22,10 @@ var streamRegistrySetSuite = []struct {
 	{
 		InMsg:  fooMessage{},
 		InMeta: streamhub.StreamMetadata{},
-		Exp:    streamhub.StreamMetadata{},
-		Err:    nil,
+		Exp: streamhub.StreamMetadata{
+			GoType: reflect.TypeOf(fooMessage{}),
+		},
+		Err: nil,
 	},
 	{
 		InMsg: fooMessage{},
@@ -33,6 +35,7 @@ var streamRegistrySetSuite = []struct {
 		},
 		Exp: streamhub.StreamMetadata{
 			Stream: "foo-stream",
+			GoType: reflect.TypeOf(fooMessage{}),
 		},
 		Err: nil,
 	},

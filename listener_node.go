@@ -14,8 +14,8 @@ type listenerNode struct {
 	Group                 string
 	ProviderConfiguration interface{}
 	ConcurrencyLevel      int
-	MaxRetries            uint32
-	RetryBackoff          time.Duration
+	RetryInitialInterval  time.Duration
+	RetryMaxInterval      time.Duration
 	RetryTimeout          time.Duration
 	ListenerDriver        ListenerDriver
 }

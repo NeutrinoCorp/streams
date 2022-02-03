@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/neutrinocorp/streamhub"
+	"github.com/neutrinocorp/streamhub/shmemory"
 )
 
 type studentSignedUp struct {
@@ -13,7 +15,10 @@ type studentSignedUp struct {
 }
 
 func main() {
+	inMemBus := shmemory.NewBus()
 	hub := streamhub.NewHub(
+		streamhub.WithPublisher(shmemory.NewPublisher(inMemBus)),
+		streamhub.WithListenerDriver(shmemory.NewListener(inMemBus)),
 		streamhub.WithSchemaRegistry(setupSchemaRegistry()),
 		streamhub.WithMarshaler(streamhub.NewAvroMarshaler()))
 	hub.RegisterStream(studentSignedUp{}, streamhub.StreamMetadata{
@@ -22,6 +27,17 @@ func main() {
 		SchemaVersion:        1,
 	})
 
+	_ = hub.Listen(studentSignedUp{},
+		streamhub.WithGroup("example-job-on-student-signed_up"),
+		streamhub.WithListenerFunc(func(ctx context.Context, message streamhub.Message) error {
+			log.Printf("message decoded at reflection-based: %+v", message.DecodedData)
+			return nil
+		}))
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+	hub.Start(ctx)
+
 	err := hub.Publish(context.Background(), studentSignedUp{
 		StudentID:  "1",
 		SignedUpAt: time.Now().UTC(),
@@ -29,6 +45,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	time.Sleep(time.Second * 10)
 }
 
 func setupSchemaRegistry() streamhub.InMemorySchemaRegistry {

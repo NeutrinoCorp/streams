@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"time"
 
@@ -16,10 +17,9 @@ type studentSignedUp struct {
 
 func main() {
 	inMemBus := shmemory.NewBus()
-	inMemListener := shmemory.NewListener(inMemBus)
 	hub := streamhub.NewHub(
 		streamhub.WithPublisher(shmemory.NewPublisher(inMemBus)),
-		streamhub.WithBaseDriver(inMemListener))
+		streamhub.WithListenerDriver(shmemory.NewListener(inMemBus)))
 
 	hub.RegisterStream(studentSignedUp{}, streamhub.StreamMetadata{
 		Stream: "student-signed_up",
@@ -28,13 +28,14 @@ func main() {
 	_ = hub.Listen(studentSignedUp{},
 		streamhub.WithGroup("example-job-on-student-signed_up"),
 		streamhub.WithListenerFunc(func(ctx context.Context, message streamhub.Message) error {
-			log.Printf("message decoded: %+v", message.DecodedData)
-			return nil
+			log.Printf("message decoded at reflection-based: %+v", message.DecodedData)
+			return errors.New("failed processing for reflection-based")
 		}))
 	hub.ListenByStreamKey("student-signed_up",
-		streamhub.WithGroup("example-job-on-student-signed_up"),
+		streamhub.WithConcurrencyLevel(3),
+		streamhub.WithGroup("second_example-job-on-student-signed_up"),
 		streamhub.WithListenerFunc(func(ctx context.Context, message streamhub.Message) error {
-			log.Printf("message decoded: %+v", message.DecodedData)
+			log.Printf("message decoded at string-based: %+v", message.DecodedData)
 			return nil
 		}))
 

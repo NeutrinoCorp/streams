@@ -16,8 +16,9 @@ func TestListenerSupervisor_Append(t *testing.T) {
 	assert.Equal(t, 0, len(sv.listenerRegistry))
 	sv.forkNode("foo")
 	assert.Equal(t, DefaultConcurrencyLevel, sv.listenerRegistry[0].ConcurrencyLevel)
-	assert.Equal(t, DefaultMaxRetries, sv.listenerRegistry[0].MaxRetries)
-	assert.Equal(t, DefaultRetryBackoff, sv.listenerRegistry[0].RetryBackoff)
+	assert.Equal(t, DefaultRetryInitialInterval, sv.listenerRegistry[0].RetryInitialInterval)
+	assert.Equal(t, DefaultRetryMaxInterval, sv.listenerRegistry[0].RetryMaxInterval)
+	assert.Equal(t, DefaultRetryTimeout, sv.listenerRegistry[0].RetryTimeout)
 	assert.Equal(t, "bar-queue", sv.listenerRegistry[0].Group)
 
 	sv.forkNode("baz")

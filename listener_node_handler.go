@@ -15,8 +15,8 @@ type ListenerNodeHandler func(context.Context, Message) error
 
 func listenerNodeHandlerRetryBackoff(baseOpts listenerNodeOptions, baseHandler ListenerNodeHandler) ListenerNodeHandler {
 	b := backoff.NewExponentialBackOff()
-	b.InitialInterval = baseOpts.retryBackoff
-	b.MaxInterval = baseOpts.retryBackoff
+	b.InitialInterval = baseOpts.retryInitialInterval
+	b.MaxInterval = baseOpts.retryMaxInterval
 	b.MaxElapsedTime = baseOpts.retryTimeout
 	return func(ctx context.Context, message Message) error {
 		return backoff.Retry(func() error {

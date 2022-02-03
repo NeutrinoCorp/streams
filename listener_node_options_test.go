@@ -63,22 +63,22 @@ func TestWithConcurrencyLevel(t *testing.T) {
 	assert.Equal(t, 2, hub.listenerSupervisor.listenerRegistry[2].ConcurrencyLevel)
 }
 
-func TestWithMaxRetries(t *testing.T) {
-	opt := WithMaxRetries(3)
+func TestWithRetryInitialInterval(t *testing.T) {
+	opt := WithRetryInitialInterval(time.Second * 5)
 	assert.Implements(t, (*ListenerNodeOption)(nil), opt)
 
 	hub := NewHub()
 	hub.ListenByStreamKey("foo", opt)
-	assert.Equal(t, uint32(3), hub.listenerSupervisor.listenerRegistry[0].MaxRetries)
+	assert.EqualValues(t, time.Second*5, hub.listenerSupervisor.listenerRegistry[0].RetryInitialInterval)
 }
 
-func TestWithRetryBackoff(t *testing.T) {
-	opt := WithRetryBackoff(time.Second * 5)
+func TestWithRetryMaxInterval(t *testing.T) {
+	opt := WithRetryMaxInterval(time.Second * 5)
 	assert.Implements(t, (*ListenerNodeOption)(nil), opt)
 
 	hub := NewHub()
 	hub.ListenByStreamKey("foo", opt)
-	assert.EqualValues(t, time.Second*5, hub.listenerSupervisor.listenerRegistry[0].RetryBackoff)
+	assert.EqualValues(t, time.Second*5, hub.listenerSupervisor.listenerRegistry[0].RetryMaxInterval)
 }
 
 func TestWithRetryTimeout(t *testing.T) {

@@ -74,17 +74,17 @@ func WithMarshaler(m Marshaler) HubOption {
 	return marshalerOption{Marshaler: m}
 }
 
-type baseDriverOption struct {
+type listenerDriverOption struct {
 	Driver ListenerDriver
 }
 
-func (o baseDriverOption) apply(opts *hubOptions) {
+func (o listenerDriverOption) apply(opts *hubOptions) {
 	opts.driver = o.Driver
 }
 
-// WithBaseDriver sets the default listener driver of a Hub instance.
-func WithBaseDriver(d ListenerDriver) HubOption {
-	return baseDriverOption{Driver: d}
+// WithListenerDriver sets the default listener driver of a Hub instance.
+func WithListenerDriver(d ListenerDriver) HubOption {
+	return listenerDriverOption{Driver: d}
 }
 
 type idFactoryOption struct {

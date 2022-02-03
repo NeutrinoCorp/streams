@@ -53,13 +53,13 @@ func (l listenerDriverNoop) ExecuteTask(_ context.Context, _ streamhub.ListenerT
 	return nil
 }
 
-func TestWithBaseDriver(t *testing.T) {
+func TestWithListenerDriver(t *testing.T) {
 	hub := streamhub.NewHub()
-	assert.Empty(t, hub.BaseListenerDriver)
+	assert.Empty(t, hub.ListenerDriver)
 
 	hub = streamhub.NewHub(
-		streamhub.WithBaseDriver(listenerDriverNoop{}))
-	assert.IsType(t, listenerDriverNoop{}, hub.BaseListenerDriver)
+		streamhub.WithListenerDriver(listenerDriverNoop{}))
+	assert.IsType(t, listenerDriverNoop{}, hub.ListenerDriver)
 }
 
 func TestWithIDFactory(t *testing.T) {
