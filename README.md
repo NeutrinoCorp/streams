@@ -8,6 +8,22 @@
 
 `Streamhub` is a toolkit crafted for streaming-powered applications written in Go.
 
+- [:envelope: Streamhub](#envelope-streamhub)
+  - [Requirements](#requirements)
+  - [Overall Architecture](#overall-architecture)
+    - [Message](#message)
+    - [Stream Registry](#stream-registry)
+    - [Unique Identifier Factory](#unique-identifier-factory)
+    - [Schema Registry](#schema-registry)
+    - [Marshaler](#marshaler)
+    - [Message Broker / Event Bus Driver](#message-broker--event-bus-driver)
+    - [Publisher](#publisher)
+    - [Listener Registry](#listener-registry)
+    - [Listener Supervisor](#listener-supervisor)
+    - [Listener Node](#listener-node)
+    - [Listener / ListenerFunc](#listener--listenerfunc)
+  - [Supported infrastructure](#supported-infrastructure)
+
 ## Requirements
 - Go version >= 1.17
 
