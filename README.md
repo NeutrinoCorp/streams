@@ -164,6 +164,8 @@ These behaviours include:
 - Correlation and Causation IDs injection into the handler-scoped context
 - Unmarshaling*
 - Logging*
+- Monitoring/Metrics*
+- Tracing*
 
 _* If available_
 
