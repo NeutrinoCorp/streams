@@ -27,14 +27,17 @@ type FailingMarshalerNoop struct{}
 
 var _ Marshaler = FailingMarshalerNoop{}
 
+// Marshal the failing marshal operation
 func (f FailingMarshalerNoop) Marshal(_ string, _ interface{}) ([]byte, error) {
 	return nil, errors.New("failing marshal")
 }
 
+// Unmarshal the failing unmarshal operation
 func (f FailingMarshalerNoop) Unmarshal(_ string, _ []byte, _ interface{}) error {
 	return errors.New("failing unmarshal")
 }
 
+// ContentType the failing content type operation
 func (f FailingMarshalerNoop) ContentType() string {
 	return ""
 }
