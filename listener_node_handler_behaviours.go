@@ -38,7 +38,7 @@ func unmarshalListenerNodeBehaviour(h *Hub, baseHandler ListenerNodeHandler) Lis
 			if err = h.Marshaler.Unmarshal(schemaDef, message.Data, decodedData.Interface()); err != nil {
 				return err
 			}
-			message.DecodedData = decodedData
+			message.DecodedData = decodedData.Elem().Interface()
 		}
 		return baseHandler(ctx, message)
 	}

@@ -30,6 +30,10 @@ func main() {
 		streamhub.WithListenerFunc(func(ctx context.Context, message streamhub.Message) error {
 			log.Printf("message decoded at reflection-based: %+v", message.DecodedData)
 			log.Printf("consumed message from group: %s", message.GroupName)
+			_, ok := message.DecodedData.(studentSignedUp)
+			if !ok {
+				log.Print("failed to cast reflection-message")
+			}
 			return errors.New("failed processing for reflection-based")
 		}))
 	hub.ListenByStreamKey("student-signed_up",
