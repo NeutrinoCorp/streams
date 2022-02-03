@@ -3,6 +3,7 @@ package streamhub
 import (
 	"hash"
 	"hash/fnv"
+	"sync"
 
 	"github.com/hamba/avro"
 	jsoniter "github.com/json-iterator/go"
@@ -42,7 +43,7 @@ func (m JSONMarshaler) ContentType() string {
 //
 // Apache Avro REQUIRES a defined SchemaRegistry to decode/encode data.
 type AvroMarshaler struct {
-	cache          map[uint64]avro.Schema
+	cache          *sync.Map
 	HashingFactory Hashing64AlgorithmFactory
 }
 
@@ -50,7 +51,7 @@ type AvroMarshaler struct {
 // computational usage when parsing Avro schema definition files.
 func NewAvroMarshaler() AvroMarshaler {
 	return AvroMarshaler{
-		cache:          make(map[uint64]avro.Schema, 0),
+		cache:          new(sync.Map),
 		HashingFactory: DefaultHashing64AlgorithmFactory,
 	}
 }
@@ -75,10 +76,14 @@ func (a AvroMarshaler) Marshal(schemaDef string, data interface{}) (parsedData [
 			return nil, err
 		}
 		hashKey := hashingAlgorithm.Sum64()
-		schemaAvro, ok = a.cache[hashKey]
+		var schemaAvroMap interface{}
+		schemaAvroMap, ok = a.cache.Load(hashKey)
+		if ok {
+			schemaAvro = schemaAvroMap.(avro.Schema)
+		}
 		defer func(specFound bool) {
 			if !ok {
-				a.cache[hashKey] = schemaAvro
+				a.cache.Store(hashKey, schemaAvro)
 			}
 		}(ok)
 	}
@@ -104,10 +109,14 @@ func (a AvroMarshaler) Unmarshal(schemaDef string, data []byte, ref interface{})
 			return err
 		}
 		hashKey := hashingAlgorithm.Sum64()
-		schemaAvro, ok = a.cache[hashKey]
+		var schemaAvroMap interface{}
+		schemaAvroMap, ok = a.cache.Load(hashKey)
+		if ok {
+			schemaAvro = schemaAvroMap.(avro.Schema)
+		}
 		defer func(specFound bool) {
 			if !ok {
-				a.cache[hashKey] = schemaAvro
+				a.cache.Store(hashKey, schemaAvro)
 			}
 		}(ok)
 	}

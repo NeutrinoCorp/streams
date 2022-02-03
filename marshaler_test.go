@@ -103,6 +103,18 @@ func TestAvroMarshaler_Marshal(t *testing.T) {
 	}`, msg)
 	assert.NotNil(t, data)
 	assert.NoError(t, err)
+
+	// test caching
+	data, err = m.Marshal(`{
+		"type": "record",
+		"name": "fooMessage",
+		"namespace": "org.ncorp.avro",
+		"fields" : [
+			{"name": "foo", "type": "string"}
+		]
+	}`, msg)
+	assert.NotNil(t, data)
+	assert.NoError(t, err)
 }
 
 func TestAvroMarshaler_Unmarshal(t *testing.T) {
