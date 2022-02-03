@@ -78,6 +78,7 @@ func NewAvroMarshaler() AvroMarshaler {
 
 var _ Marshaler = AvroMarshaler{}
 
+// Hashing64AlgorithmFactory factory for hash.Hash64 algorithms (used by Apache Avro schema definition caching system)
 type Hashing64AlgorithmFactory func() hash.Hash64
 
 // DefaultHashing64AlgorithmFactory the default hashing64 algorithm factory for Marshaler schema definition caching layer
