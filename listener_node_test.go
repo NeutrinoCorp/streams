@@ -19,7 +19,7 @@ func TestListenerNode_Start(t *testing.T) {
 		ListenerDriver:   listenerDriverNoopLoop{},
 	}
 	node.start(baseCtx)
-	assert.Equal(t, 12, runtime.NumGoroutine())
+	assert.GreaterOrEqual(t, 12, runtime.NumGoroutine())
 	time.Sleep(time.Millisecond * 100)
 	assert.Equal(t, 2, runtime.NumGoroutine())
 

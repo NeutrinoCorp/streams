@@ -61,7 +61,7 @@ func (r StreamRegistry) GetByString(key string) (StreamMetadata, error) {
 //
 // This optimistic lookup is done in order to keep amortized time and space complexity when using non-reflection
 // based implementations on the root Hub (using only String methods from this very Stream Registry component). Thus,
-// greater performance is achieved for scenarios when reflection is not required by the program.
+// greater performance is achieved for scenarios when reflection-based stream registration is not required by the program.
 func (r StreamRegistry) GetByStreamName(name string) (StreamMetadata, error) {
 	if metadata, err := r.GetByString(name); err == nil {
 		return metadata, nil
