@@ -35,9 +35,11 @@ type fooMessage struct {
 
 func TestListenerNodeHandlerBehaviour_Unmarshal(t *testing.T) {
 	var h ListenerNodeHandler = func(ctx context.Context, message Message) error {
-		data, ok := message.DecodedData.(fooMessage)
+		_, ok := message.DecodedData.(*fooMessage)
+		assert.False(t, ok)
+		dataValid, ok := message.DecodedData.(fooMessage)
 		assert.True(t, ok)
-		assert.Equal(t, "foo", data.Hello)
+		assert.Equal(t, "foo", dataValid.Hello)
 		return nil
 	}
 	hub := NewHub(WithSchemaRegistry(InMemorySchemaRegistry{
