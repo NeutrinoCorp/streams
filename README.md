@@ -9,7 +9,7 @@
 `Streamhub` is a toolkit crafted for streaming-powered applications written in Go.
 
 ## Requirements
-- Go version >= 1.13
+- Go version >= 1.17
 
 ## Overall Architecture
 
@@ -24,20 +24,42 @@ and the actual live infrastructure using a _facade component_ called `Hub`.
 _Internal `Hub` architecture and specific flows of basic streams operations. 
 On the left: Message publishing flow. On the right: Message consumption flow._
 
+### Message
+
+The `Message` type is the unit of information which will be used to interact with multiple systems through live infrastructure.
+
+`Streamhub` implements natively most of the CNCF's `CloudEvents` specification fields to keep consistency between messages passed through
+a stream.
+
+Just as the `CloudEvents` specification states, depending on the underlying communication protocol from Event Buses and 
+Message Brokers (_e.g. MQTT, Apache Kafka, raw JSON, Amazon SNS_), a message will be constructed accordingly to the given protocol.
+
+For example, if using Apache Kafka, most of the message fields will be attached to binary headers instead the body of the 
+message itself. In the other hand, if using Amazon Simple Notification Service, messages will be encoded into the raw
+JSON template for messages as AWS specifies on their API definition for SNS. These processes are independent from the `Marshaler`
+operations. Hence, message inner data (_the actual message content_) codec won't change.
+
+For more information about CloudEvents, please review this [repository](https://github.com/cloudevents/spec).
+
 ### Stream Registry
 
 An `Stream Registry` is an in-memory key-value database used by both `Listener Node(s)` and `Publisher` which holds metadata about every stream
-that will interact with the program. Moreover, stream metadata might contain useful information about the stream such as schema 
-definition version and/or the schema definition name so components such as `Publisher` and `Listener Node` can find schema definitions
-from the `Schema Registry` in order to continue with their further operations normally.
+that will interact with the program.
 
-The `Stream Registry` accepts reflection-based structs which will led to a registration with the given struct name (_e.g. main.fooMessage_)
-as string. In addition, the registry also accepts plain strings as keys in order to increase flexibility (_one may use 
-the stream name, e.g. foo-stream_).
+Moreover, stream metadata might contain critical information about the stream such 
+as the name of the stream (_also called topic_), schema definition version and/or the schema definition name so components such as `Publisher` and `Listener Node` can find schema definitions
+from the `Schema Registry` in order to continue with their further operations normally. The stream name defined here is used
+by both `Publisher` and `Listener Node(s)` to interact with live infrastructure.
+
+The `Stream Registry` accepts reflection-based structs which will lead to a registration with the given struct name 
+(_e.g. package_name.struct_name -> main.fooMessage_) as string. In addition, the registry also accepts plain strings as 
+keys in order to increase flexibility (_one may use the stream name, e.g. foo-stream_).
 
 Note: If using plain strings as keys, remember to fulfill the `GoType` metadata field so the `Listener Node` handler can decode
 the incoming message data. If no `GoType` was found in stream metadata while consuming a message, the marshaling capabilities will be
 disabled to avoid program panics.
+
+Note: Using reflection-based stream definitions will lead to performance degradation when listening to streams. 
 
 ### Unique Identifier Factory
 
