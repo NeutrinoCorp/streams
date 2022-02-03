@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/neutrinocorp/streamhub"
+	"github.com/neutrinocorp/streamhub/shmemory"
 )
 
 type studentSignedUp struct {
@@ -13,18 +15,32 @@ type studentSignedUp struct {
 }
 
 func main() {
-	hub := streamhub.NewHub()
+	inMemBus := shmemory.NewBus()
+	inMemListener := shmemory.NewListener(inMemBus)
+	hub := streamhub.NewHub(
+		streamhub.WithPublisher(shmemory.NewPublisher(inMemBus)),
+		streamhub.WithBaseDriver(inMemListener))
+
 	hub.RegisterStream(studentSignedUp{}, streamhub.StreamMetadata{
 		Stream: "student-signed_up",
 	})
 
 	_ = hub.Listen(studentSignedUp{},
-		streamhub.WithConsumerGroup("example-job-on-student-signed_up"),
+		streamhub.WithGroup("example-job-on-student-signed_up"),
 		streamhub.WithListenerFunc(func(ctx context.Context, message streamhub.Message) error {
+			log.Printf("message decoded: %+v", message.DecodedData)
 			return nil
 		}))
 	hub.ListenByStreamKey("student-signed_up",
-		streamhub.WithProviderConfiguration(nil))
+		streamhub.WithGroup("example-job-on-student-signed_up"),
+		streamhub.WithListenerFunc(func(ctx context.Context, message streamhub.Message) error {
+			log.Printf("message decoded: %+v", message.DecodedData)
+			return nil
+		}))
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+	hub.Start(ctx)
 
 	err := hub.Publish(context.Background(), studentSignedUp{
 		StudentID:  "2",
@@ -33,4 +49,5 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	time.Sleep(time.Second * 10)
 }

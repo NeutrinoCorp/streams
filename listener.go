@@ -7,13 +7,13 @@ type Listener interface {
 	// Listen starts the execution process triggered when a message is received from a stream.
 	//
 	// Returns an error to indicate the process has failed so Hub will retry the processing using exponential backoff.
-	Listen(ctx context.Context, message Message) error
+	Listen(context.Context, Message) error
 }
 
 // ListenerFunc is the execution process triggered when a message is received from a stream.
 //
 // Returns an error to indicate the process has failed so Hub will retry the processing using exponential backoff.
-type ListenerFunc func(ctx context.Context, message Message) error
+type ListenerFunc func(context.Context, Message) error
 
 // ListenerNoop the no-operation implementation of Listener
 type ListenerNoop struct{}

@@ -9,13 +9,16 @@ const DefaultHubInstanceName = "com.streamhub"
 
 // Hub is the main component which enables interactions between several systems through the usage of streams.
 type Hub struct {
-	InstanceName   string
-	StreamRegistry StreamRegistry
-	Publisher      Publisher
-	PublisherFunc  PublisherFunc
-	Marshaler      Marshaler
-	IDFactory      IDFactoryFunc
-	SchemaRegistry SchemaRegistry
+	InstanceName       string
+	StreamRegistry     StreamRegistry
+	Publisher          Publisher
+	PublisherFunc      PublisherFunc
+	Marshaler          Marshaler
+	IDFactory          IDFactoryFunc
+	SchemaRegistry     SchemaRegistry
+	BaseListenerDriver ListenerDriver
+
+	listenerSupervisor *listenerSupervisor
 }
 
 // NewHub allocates a new Hub
@@ -24,15 +27,18 @@ func NewHub(opts ...HubOption) *Hub {
 	for _, o := range opts {
 		o.apply(&baseOpts)
 	}
-	return &Hub{
-		StreamRegistry: StreamRegistry{},
-		InstanceName:   baseOpts.instanceName,
-		Marshaler:      baseOpts.marshaler,
-		Publisher:      baseOpts.publisher,
-		PublisherFunc:  baseOpts.publisherFunc,
-		IDFactory:      baseOpts.idFactory,
-		SchemaRegistry: baseOpts.schemaRegistry,
+	h := &Hub{
+		StreamRegistry:     StreamRegistry{},
+		InstanceName:       baseOpts.instanceName,
+		Marshaler:          baseOpts.marshaler,
+		Publisher:          baseOpts.publisher,
+		PublisherFunc:      baseOpts.publisherFunc,
+		IDFactory:          baseOpts.idFactory,
+		SchemaRegistry:     baseOpts.schemaRegistry,
+		BaseListenerDriver: baseOpts.driver,
 	}
+	h.listenerSupervisor = newListenerSupervisor(h)
+	return h
 }
 
 // defines the fallback options of a Hub instance.
@@ -53,6 +59,26 @@ func (h *Hub) RegisterStream(message interface{}, metadata StreamMetadata) {
 // RegisterStreamByString creates a relation between a string key and metadata.
 func (h *Hub) RegisterStreamByString(messageType string, metadata StreamMetadata) {
 	h.StreamRegistry.SetByString(messageType, metadata)
+}
+
+// Listen registers a new stream-listening background job.
+func (h *Hub) Listen(message interface{}, opts ...ListenerNodeOption) error {
+	metadata, err := h.StreamRegistry.Get(message)
+	if err != nil {
+		return err
+	}
+	h.listenerSupervisor.forkNode(metadata.Stream, opts...)
+	return nil
+}
+
+// ListenByStreamKey registers a new stream-listening background job using the raw stream identifier (e.g. topic name).
+func (h *Hub) ListenByStreamKey(stream string, opts ...ListenerNodeOption) {
+	h.listenerSupervisor.forkNode(stream, opts...)
+}
+
+// Start initiates all daemons (e.g. stream-listening jobs) processes
+func (h *Hub) Start(ctx context.Context) {
+	h.listenerSupervisor.startNodes(ctx)
 }
 
 // Publish inserts a message into a stream assigned to the message in the StreamRegistry in order to propagate the

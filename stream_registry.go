@@ -13,18 +13,20 @@ type StreamMetadata struct {
 	Stream               string
 	SchemaDefinitionName string
 	SchemaVersion        int
+	GoType               reflect.Type
 }
 
-// StreamRegistry is an in-memory storage of message metadata used by Hub and any external agent to set and
-// retrieve information about a stream message.
+// StreamRegistry is an in-memory storage of streams metadata used by Hub and any external agent to set and
+// retrieve information about a specific stream.
 //
-// Uses the message type (or a custom string) as key.
+// Uses a custom string (or Go's struct type as string) as key.
 type StreamRegistry map[string]StreamMetadata
 
 // Set creates a relation between a stream message type and metadata.
 func (r StreamRegistry) Set(message interface{}, metadata StreamMetadata) {
-	msgType := reflect.TypeOf(message).String()
-	r.SetByString(msgType, metadata)
+	msgType := reflect.TypeOf(message)
+	metadata.GoType = msgType
+	r.SetByString(msgType.String(), metadata)
 }
 
 // SetByString creates a relation between a string key and metadata.
@@ -45,4 +47,31 @@ func (r StreamRegistry) GetByString(key string) (StreamMetadata, error) {
 		return StreamMetadata{}, ErrMissingStream
 	}
 	return metadata, nil
+}
+
+// GetByStreamName retrieves a stream message metadata from a stream name.
+//
+// It contains an optimistic lookup mechanism to keep constant time and space complexity.
+//
+// If metadata is not found by the given key, then fallback default to O(n) lookup.
+// This will increase time and space complexity of the fallback function by the GetByString base complexity.
+// Nevertheless, GetByString will be always constant, so it is guaranteed to keep
+// a constant complexity sum to the overall GetByStream complexity.
+// E.g. GetByString = 49.75 ns/op, hence, GetByStreamName = original ns/op + GetByString ns/op.
+//
+// This optimistic lookup is done in order to keep amortized time and space complexity when using non-reflection
+// based implementations on the root Hub (using only String methods from this very Stream Registry component). Thus,
+// greater performance is achieved for scenarios when reflection is not required by the program.
+func (r StreamRegistry) GetByStreamName(name string) (StreamMetadata, error) {
+	if metadata, err := r.GetByString(name); err == nil {
+		return metadata, nil
+	}
+
+	for _, stream := range r {
+		if stream.Stream == name {
+			return stream, nil
+		}
+	}
+
+	return StreamMetadata{}, ErrMissingStream
 }

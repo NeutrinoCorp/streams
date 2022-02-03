@@ -9,6 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestHub_Listen(t *testing.T) {
+
+}
+
 func TestHub_Publish(t *testing.T) {
 	hub := streamhub.NewHub(streamhub.WithSchemaRegistry(streamhub.NoopSchemaRegistry{}),
 		streamhub.WithPublisher(streamhub.NoopPublisher))

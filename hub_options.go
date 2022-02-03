@@ -1,5 +1,7 @@
 package streamhub
 
+import "log"
+
 type hubOptions struct {
 	instanceName   string
 	publisher      Publisher
@@ -7,6 +9,8 @@ type hubOptions struct {
 	marshaler      Marshaler
 	idFactory      IDFactoryFunc
 	schemaRegistry SchemaRegistry
+	driver         ListenerDriver
+	logger         log.Logger
 }
 
 // HubOption enables configuration of a Hub instance.
@@ -68,6 +72,19 @@ func (o marshalerOption) apply(opts *hubOptions) {
 // WithMarshaler sets the default marshaler of a Hub instance.
 func WithMarshaler(m Marshaler) HubOption {
 	return marshalerOption{Marshaler: m}
+}
+
+type baseDriverOption struct {
+	Driver ListenerDriver
+}
+
+func (o baseDriverOption) apply(opts *hubOptions) {
+	opts.driver = o.Driver
+}
+
+// WithBaseDriver sets the default listener driver of a Hub instance.
+func WithBaseDriver(d ListenerDriver) HubOption {
+	return baseDriverOption{Driver: d}
 }
 
 type idFactoryOption struct {

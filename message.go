@@ -25,13 +25,18 @@ type Message struct {
 
 	// Optional fields
 
-	DataContentType string `json:"datacontenttype,omitempty"`
-	DataSchema      string `json:"dataschema,omitempty"`
-	Timestamp       int64  `json:"timestamp,omitempty"`
+	DataContentType   string `json:"datacontenttype,omitempty"`
+	DataSchema        string `json:"dataschema,omitempty"`
+	DataSchemaVersion int    `json:"dataschemaversion,omitempty"`
+	Timestamp         int64  `json:"timestamp,omitempty"`
 
 	// Streamhub fields
 	CorrelationID string `json:"correlation_id"`
 	CausationID   string `json:"causation_id"`
+
+	// consumer-only fields
+	DecodedData interface{} `json:"-"`
+	GroupName   string      `json:"-"`
 }
 
 // NewMessageArgs arguments required by NewMessage function to operate.
@@ -43,21 +48,24 @@ type NewMessageArgs struct {
 	Stream               string
 	SchemaDefinitionName string
 	ContentType          string
+	GroupName            string
 }
 
 // NewMessage allocates an immutable Message ready to be transported in a stream.
 func NewMessage(args NewMessageArgs) Message {
 	strSchemaVersion := strconv.Itoa(args.SchemaVersion)
 	return Message{
-		ID:              args.ID,
-		Stream:          args.Stream,
-		Source:          args.Source,
-		SpecVersion:     CloudEventsSpecVersion,
-		Type:            generateMessageType(args.Source, args.Stream, strSchemaVersion),
-		Data:            args.Data,
-		DataContentType: args.ContentType,
-		DataSchema:      generateMessageSchema(args.SchemaDefinitionName, strSchemaVersion),
-		Timestamp:       time.Now().Unix(),
+		ID:                args.ID,
+		Stream:            args.Stream,
+		Source:            args.Source,
+		SpecVersion:       CloudEventsSpecVersion,
+		Type:              generateMessageType(args.Source, args.Stream, strSchemaVersion),
+		Data:              args.Data,
+		DataContentType:   args.ContentType,
+		DataSchema:        args.SchemaDefinitionName,
+		DataSchemaVersion: args.SchemaVersion,
+		Timestamp:         time.Now().Unix(),
+		GroupName:         args.GroupName,
 	}
 }
 
@@ -72,16 +80,5 @@ func generateMessageType(source, stream, version string) string {
 		buff.WriteString(".v")
 		buff.WriteString(version)
 	}
-	return buff.String()
-}
-
-func generateMessageSchema(schemaDef, version string) string {
-	if schemaDef == "" {
-		return ""
-	}
-	var buff strings.Builder
-	buff.WriteString(schemaDef)
-	buff.WriteString("#v")
-	buff.WriteString(version)
 	return buff.String()
 }

@@ -62,14 +62,15 @@ var newMessageSuite = []struct {
 			ContentType:          "application/json",
 		},
 		Exp: streamhub.Message{
-			ID:              "123",
-			Stream:          "foo-stream",
-			Source:          "com.streamhub",
-			SpecVersion:     streamhub.CloudEventsSpecVersion,
-			Type:            "com.streamhub.foo-stream.v0",
-			Data:            []byte("foo"),
-			DataContentType: "application/json",
-			DataSchema:      "foo_stream#v0",
+			ID:                "123",
+			Stream:            "foo-stream",
+			Source:            "com.streamhub",
+			SpecVersion:       streamhub.CloudEventsSpecVersion,
+			Type:              "com.streamhub.foo-stream.v0",
+			Data:              []byte("foo"),
+			DataContentType:   "application/json",
+			DataSchema:        "foo_stream",
+			DataSchemaVersion: 0,
 		},
 	},
 	{
@@ -83,14 +84,39 @@ var newMessageSuite = []struct {
 			ContentType:          "application/json",
 		},
 		Exp: streamhub.Message{
-			ID:              "123",
-			Stream:          "foo-stream",
-			Source:          "com.streamhub",
-			SpecVersion:     streamhub.CloudEventsSpecVersion,
-			Type:            "com.streamhub.foo-stream.v4",
-			Data:            []byte("foo"),
-			DataContentType: "application/json",
-			DataSchema:      "foo_stream#v4",
+			ID:                "123",
+			Stream:            "foo-stream",
+			Source:            "com.streamhub",
+			SpecVersion:       streamhub.CloudEventsSpecVersion,
+			Type:              "com.streamhub.foo-stream.v4",
+			Data:              []byte("foo"),
+			DataContentType:   "application/json",
+			DataSchema:        "foo_stream",
+			DataSchemaVersion: 4,
+		},
+	},
+	{
+		In: streamhub.NewMessageArgs{
+			SchemaVersion:        4,
+			Data:                 []byte("foo"),
+			ID:                   "123",
+			Source:               "com.streamhub",
+			Stream:               "foo-stream",
+			SchemaDefinitionName: "foo_stream",
+			ContentType:          "application/json",
+			GroupName:            "foo-group",
+		},
+		Exp: streamhub.Message{
+			ID:                "123",
+			Stream:            "foo-stream",
+			Source:            "com.streamhub",
+			SpecVersion:       streamhub.CloudEventsSpecVersion,
+			Type:              "com.streamhub.foo-stream.v4",
+			Data:              []byte("foo"),
+			DataContentType:   "application/json",
+			DataSchema:        "foo_stream",
+			DataSchemaVersion: 4,
+			GroupName:         "foo-group",
 		},
 	},
 }
@@ -111,6 +137,7 @@ func TestNewMessage(t *testing.T) {
 				assert.Equal(t, tt.Exp.DataContentType, exp.DataContentType)
 			}
 			assert.Equal(t, tt.Exp.DataSchema, exp.DataSchema)
+			assert.Equal(t, tt.Exp.DataSchemaVersion, exp.DataSchemaVersion)
 			assert.NotEmpty(t, exp.Timestamp)
 		})
 	}
