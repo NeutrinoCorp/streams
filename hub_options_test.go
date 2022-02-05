@@ -69,3 +69,16 @@ func TestWithSchemaRegistry(t *testing.T) {
 		streamhub.WithSchemaRegistry(streamhub.NoopSchemaRegistry{}))
 	assert.IsType(t, streamhub.NoopSchemaRegistry{}, hub.SchemaRegistry)
 }
+
+func TestWithListenerBehaviours(t *testing.T) {
+	hub := streamhub.NewHub()
+	assert.NotNil(t, hub.ListenerBehaviours)
+
+	totalDefaultBehaviours := len(hub.ListenerBehaviours)
+	hub = streamhub.NewHub(
+		streamhub.WithListenerBehaviours(func(node *streamhub.ListenerNode, hub *streamhub.Hub, next streamhub.ListenerFunc) streamhub.ListenerFunc {
+			return next
+		}))
+	// verify if no default behaviour was removed
+	assert.Equal(t, totalDefaultBehaviours+1, len(hub.ListenerBehaviours))
+}

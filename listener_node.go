@@ -5,12 +5,12 @@ import (
 	"time"
 )
 
-// listenerNode is the worker unit which schedules stream-listening job(s).
+// ListenerNode is the worker unit which schedules stream-listening job(s).
 //
 // Each ListenerNode is independent of other nodes to guarantee resiliency of interleaved processes and avoid cascading failures.
-type listenerNode struct {
+type ListenerNode struct {
 	Stream                string
-	HandlerFunc           ListenerNodeHandler
+	HandlerFunc           ListenerFunc
 	Group                 string
 	ProviderConfiguration interface{}
 	ConcurrencyLevel      int
@@ -22,7 +22,7 @@ type listenerNode struct {
 
 // start schedules all workers of a ListenerNode.
 // Note: Will not schedule if ListenerDriver was not found.
-func (n *listenerNode) start(ctx context.Context) {
+func (n *ListenerNode) start(ctx context.Context) {
 	if n.ListenerDriver == nil {
 		return
 	}

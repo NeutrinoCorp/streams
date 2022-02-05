@@ -1,16 +1,14 @@
 package streamhub
 
-import "log"
-
 type hubOptions struct {
-	instanceName   string
-	publisher      Publisher
-	publisherFunc  PublisherFunc
-	marshaler      Marshaler
-	idFactory      IDFactoryFunc
-	schemaRegistry SchemaRegistry
-	driver         ListenerDriver
-	logger         log.Logger
+	instanceName       string
+	publisher          Publisher
+	publisherFunc      PublisherFunc
+	marshaler          Marshaler
+	idFactory          IDFactoryFunc
+	schemaRegistry     SchemaRegistry
+	driver             ListenerDriver
+	listenerBehaviours []ListenerBehaviour
 }
 
 // HubOption enables configuration of a Hub instance.
@@ -111,4 +109,18 @@ func (o schemaRegistryOption) apply(opts *hubOptions) {
 // WithSchemaRegistry sets the schema registry of a Hub instance for stream message schema definitions.
 func WithSchemaRegistry(r SchemaRegistry) HubOption {
 	return schemaRegistryOption{SchemaRegistry: r}
+}
+
+type listenerBehavioursOption struct {
+	Behaviours []ListenerBehaviour
+}
+
+func (o listenerBehavioursOption) apply(opts *hubOptions) {
+	opts.listenerBehaviours = o.Behaviours
+}
+
+// WithListenerBehaviours sets a list of ListenerBehaviour of a Hub instance ready to be executed by every stream-listening job's
+// ListenerFunc or Listener component.
+func WithListenerBehaviours(b ...ListenerBehaviour) HubOption {
+	return listenerBehavioursOption{Behaviours: b}
 }

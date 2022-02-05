@@ -5,13 +5,13 @@ import "time"
 // ListenerTask job metadata in order to be executed by the ListenerNodeDriver.
 type ListenerTask struct {
 	Stream        string
-	HandlerFunc   ListenerNodeHandler
+	HandlerFunc   ListenerFunc
 	Group         string
 	Configuration interface{}
 	Timeout       time.Duration
 }
 
-func newListenerTask(n *listenerNode) ListenerTask {
+func newListenerTask(n *ListenerNode) ListenerTask {
 	return ListenerTask{
 		Stream:        n.Stream,
 		HandlerFunc:   n.HandlerFunc,

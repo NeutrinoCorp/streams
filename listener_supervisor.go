@@ -25,7 +25,7 @@ type listenerSupervisor struct {
 func newListenerSupervisor(h *Hub, opts ...ListenerNodeOption) *listenerSupervisor {
 	return &listenerSupervisor{
 		parentHub:            h,
-		listenerRegistry:     make([]listenerNode, 0),
+		listenerRegistry:     make([]ListenerNode, 0),
 		baseListenerNodeOpts: opts,
 	}
 }
@@ -49,9 +49,9 @@ func (s *listenerSupervisor) forkNode(stream string, opts ...ListenerNodeOption)
 		o.apply(&baseOpts)
 	}
 
-	s.listenerRegistry = append(s.listenerRegistry, listenerNode{
+	node := &ListenerNode{
 		Stream:                stream,
-		HandlerFunc:           s.attachDefaultBehaviours(baseOpts),
+		HandlerFunc:           s.getFallbackListenerFunc(baseOpts),
 		Group:                 baseOpts.group,
 		ProviderConfiguration: baseOpts.providerConfiguration,
 		ConcurrencyLevel:      baseOpts.concurrencyLevel,
@@ -59,33 +59,33 @@ func (s *listenerSupervisor) forkNode(stream string, opts ...ListenerNodeOption)
 		RetryMaxInterval:      baseOpts.retryMaxInterval,
 		RetryTimeout:          baseOpts.retryTimeout,
 		ListenerDriver:        baseOpts.driver,
-	})
+	}
+	node.HandlerFunc = s.attachDefaultBehaviours(node)
+	s.listenerRegistry = append(s.listenerRegistry, *node)
 }
 
-// Adds to stream-listening handler the following behaviours:
-// - Retry backoff
-// - Correlation and causation ID injection
-// - Unmarshalling*
-// - Logging*
-// - Metrics*
-// - Tracing*
-//
-// * Optional
-func (s *listenerSupervisor) attachDefaultBehaviours(baseOpts listenerNodeOptions) ListenerNodeHandler {
+func (s *listenerSupervisor) getFallbackListenerFunc(baseOpts listenerNodeOptions) ListenerFunc {
 	if baseOpts.listenerFunc == nil && baseOpts.listener == nil {
 		return nil
 	}
 
-	var handler ListenerNodeHandler
+	var handler ListenerFunc
 	if baseOpts.listener != nil {
 		handler = baseOpts.listener.Listen
 	} else if baseOpts.listenerFunc != nil {
-		handler = ListenerNodeHandler(baseOpts.listenerFunc)
+		handler = baseOpts.listenerFunc
 	}
-	handler = retryListenerNodeBehaviour(baseOpts, handler)
-	handler = unmarshalListenerNodeBehaviour(s.parentHub, handler)
-	handler = injectGroupListenerNodeBehaviour(baseOpts, handler)
 	return handler
+}
+
+func (s *listenerSupervisor) attachDefaultBehaviours(node *ListenerNode) ListenerFunc {
+	if node.HandlerFunc == nil {
+		return nil
+	}
+	for _, b := range s.parentHub.ListenerBehaviours {
+		node.HandlerFunc = b(node, s.parentHub, node.HandlerFunc)
+	}
+	return node.HandlerFunc
 }
 
 // startNodes boots up all nodes from the listenerSupervisor's ListenerRegistry.

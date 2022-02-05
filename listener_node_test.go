@@ -13,7 +13,7 @@ func TestListenerNode_Start(t *testing.T) {
 	baseCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
 	defer cancel()
 	concurrency := 10
-	node := listenerNode{
+	node := ListenerNode{
 		Stream:           "foo",
 		ConcurrencyLevel: concurrency,
 		ListenerDriver:   listenerDriverNoopLoop{},
@@ -25,7 +25,7 @@ func TestListenerNode_Start(t *testing.T) {
 
 	baseCtx2, cancelCtx2 := context.WithTimeout(context.Background(), time.Millisecond)
 	defer cancelCtx2()
-	node = listenerNode{
+	node = ListenerNode{
 		Stream:           "foo",
 		ConcurrencyLevel: 1,
 		ListenerDriver:   listenerDriverNoop{},
@@ -40,7 +40,7 @@ func BenchmarkListenerNode_Start(b *testing.B) {
 	baseCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	concurrency := 1
-	node := listenerNode{
+	node := ListenerNode{
 		Stream:           "foo",
 		ConcurrencyLevel: concurrency,
 		ListenerDriver:   listenerDriverNoop{},

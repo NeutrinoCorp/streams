@@ -9,14 +9,15 @@ const DefaultHubInstanceName = "com.streamhub"
 
 // Hub is the main component which enables interactions between several systems through the usage of streams.
 type Hub struct {
-	InstanceName   string
-	StreamRegistry StreamRegistry
-	Publisher      Publisher
-	PublisherFunc  PublisherFunc
-	Marshaler      Marshaler
-	IDFactory      IDFactoryFunc
-	SchemaRegistry SchemaRegistry
-	ListenerDriver ListenerDriver
+	InstanceName       string
+	StreamRegistry     StreamRegistry
+	Publisher          Publisher
+	PublisherFunc      PublisherFunc
+	Marshaler          Marshaler
+	IDFactory          IDFactoryFunc
+	SchemaRegistry     SchemaRegistry
+	ListenerDriver     ListenerDriver
+	ListenerBehaviours []ListenerBehaviour
 
 	listenerSupervisor *listenerSupervisor
 }
@@ -28,14 +29,15 @@ func NewHub(opts ...HubOption) *Hub {
 		o.apply(&baseOpts)
 	}
 	h := &Hub{
-		StreamRegistry: StreamRegistry{},
-		InstanceName:   baseOpts.instanceName,
-		Marshaler:      baseOpts.marshaler,
-		Publisher:      baseOpts.publisher,
-		PublisherFunc:  baseOpts.publisherFunc,
-		IDFactory:      baseOpts.idFactory,
-		SchemaRegistry: baseOpts.schemaRegistry,
-		ListenerDriver: baseOpts.driver,
+		StreamRegistry:     StreamRegistry{},
+		InstanceName:       baseOpts.instanceName,
+		Marshaler:          baseOpts.marshaler,
+		Publisher:          baseOpts.publisher,
+		PublisherFunc:      baseOpts.publisherFunc,
+		IDFactory:          baseOpts.idFactory,
+		SchemaRegistry:     baseOpts.schemaRegistry,
+		ListenerDriver:     baseOpts.driver,
+		ListenerBehaviours: append(listenerBaseBehaviours, baseOpts.listenerBehaviours...),
 	}
 	h.listenerSupervisor = newListenerSupervisor(h)
 	return h
@@ -145,7 +147,7 @@ func (h *Hub) publishMessage(ctx context.Context, metadata StreamMetadata, messa
 // Uses given context to inject correlation and causation IDs.
 func (h *Hub) PublishRawMessage(ctx context.Context, message Message) error {
 	message.CorrelationID = InjectMessageCorrelationID(ctx, message.ID)
-	message.CausationID = InjectMessageCausationID(ctx, message.ID)
+	message.CausationID = InjectMessageCausationID(ctx, message.CorrelationID)
 	if h.Publisher != nil {
 		return h.Publisher.Publish(ctx, message)
 	}
