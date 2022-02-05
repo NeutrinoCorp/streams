@@ -34,6 +34,14 @@ func (b *Bus) registerHandler(task streamhub.ListenerTask) {
 	b.messageHandlers[task.Stream] = handlers
 }
 
+func (b *Bus) publish(_ context.Context, message streamhub.Message) error {
+	if !b.startedBus {
+		return ErrBusNotStarted
+	}
+	b.messageBuffer <- message
+	return nil
+}
+
 // start listen to the underlying message buffer queue that will be later used by publishers.
 // Inner operations will schedule stream-listeners if subscribed to the arrived message stream.
 //
@@ -44,13 +52,12 @@ func (b *Bus) start(ctx context.Context) {
 	}
 	go func() {
 		for msg := range b.messageBuffer {
-			tasks := b.messageHandlers[msg.Stream]
-			for _, t := range tasks {
-				go func(t streamhub.ListenerTask) {
-					scopedCtx, cancel := context.WithTimeout(ctx, t.Timeout)
+			for _, t := range b.messageHandlers[msg.Stream] {
+				go func(task streamhub.ListenerTask, message streamhub.Message) {
+					scopedCtx, cancel := context.WithTimeout(ctx, task.Timeout)
 					defer cancel()
-					_ = t.HandlerFunc(scopedCtx, msg)
-				}(t)
+					_ = task.HandlerFunc(scopedCtx, message)
+				}(t, msg)
 			}
 		}
 	}()

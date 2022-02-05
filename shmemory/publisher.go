@@ -23,10 +23,6 @@ func NewPublisher(b *Bus) *Publisher {
 }
 
 // Publish pushes the given message into the internal in-memory Bus
-func (p *Publisher) Publish(_ context.Context, message streamhub.Message) error {
-	if !p.b.startedBus {
-		return ErrBusNotStarted
-	}
-	p.b.messageBuffer <- message
-	return nil
+func (p *Publisher) Publish(ctx context.Context, message streamhub.Message) error {
+	return p.b.publish(ctx, message)
 }
