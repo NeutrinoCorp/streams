@@ -24,3 +24,16 @@ func BenchmarkGenerateUUID(b *testing.B) {
 		_, _ = streamhub.UuidIdFactory()
 	}
 }
+
+func TestGenerateRandID(t *testing.T) {
+	id, err := streamhub.RandInt64Factory()
+	assert.NotEmpty(t, id)
+	assert.NoError(t, err)
+}
+
+func BenchmarkGenerateRandID(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		b.ReportAllocs()
+		_, _ = streamhub.RandInt64Factory()
+	}
+}
