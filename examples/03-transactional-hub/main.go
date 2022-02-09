@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/neutrinocorp/streamhub"
-	"github.com/neutrinocorp/streamhub/shmemory"
+	shmemory "github.com/neutrinocorp/streamhub/streamhub-memory"
 )
 
 type studentSignedUp struct {

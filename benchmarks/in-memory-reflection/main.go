@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/neutrinocorp/streamhub"
-	"github.com/neutrinocorp/streamhub/shmemory"
+	streamhub_memory "github.com/neutrinocorp/streamhub/streamhub-memory"
 )
 
 type transactionRegistered struct {
@@ -21,10 +21,10 @@ func main() {
 	baseCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	b := shmemory.NewBus()
+	b := streamhub_memory.NewBus()
 	hub := streamhub.NewHub(
-		streamhub.WithPublisher(shmemory.NewPublisher(b)),
-		streamhub.WithListenerDriver(shmemory.NewListener(b)))
+		streamhub.WithPublisher(streamhub_memory.NewPublisher(b)),
+		streamhub.WithListenerDriver(streamhub_memory.NewListener(b)))
 
 	registerStream(hub)
 	registerListeners(hub)

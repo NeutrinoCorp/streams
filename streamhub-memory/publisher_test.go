@@ -1,4 +1,4 @@
-package shmemory_test
+package streamhub_memory_test
 
 import (
 	"context"
@@ -7,22 +7,22 @@ import (
 	"time"
 
 	"github.com/neutrinocorp/streamhub"
-	"github.com/neutrinocorp/streamhub/shmemory"
+	streamhub_memory "github.com/neutrinocorp/streamhub/streamhub-memory"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPublisher_Publish(t *testing.T) {
 	assert.Equal(t, 2, runtime.NumGoroutine())
 
-	bus := shmemory.NewBus()
-	p := shmemory.NewPublisher(bus)
+	bus := streamhub_memory.NewBus()
+	p := streamhub_memory.NewPublisher(bus)
 	err := p.Publish(context.Background(), streamhub.Message{
 		Stream: "foo-stream",
 	})
-	assert.ErrorIs(t, err, shmemory.ErrBusNotStarted)
+	assert.ErrorIs(t, err, streamhub_memory.ErrBusNotStarted)
 	assert.Equal(t, 2, runtime.NumGoroutine())
 
-	d := shmemory.NewListener(bus)
+	d := streamhub_memory.NewListener(bus)
 	baseCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
 	defer cancel()
 	err = d.ExecuteTask(baseCtx, streamhub.ListenerTask{

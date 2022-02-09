@@ -1,4 +1,4 @@
-package shmemory
+package streamhub_memory
 
 import (
 	"context"

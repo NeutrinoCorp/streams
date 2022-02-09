@@ -1,4 +1,4 @@
-package shmemory_test
+package streamhub_memory_test
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/neutrinocorp/streamhub"
-	"github.com/neutrinocorp/streamhub/shmemory"
+	shmemory "github.com/neutrinocorp/streamhub/streamhub-memory"
 	"github.com/stretchr/testify/assert"
 )
 
