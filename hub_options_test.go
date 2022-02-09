@@ -82,3 +82,14 @@ func TestWithListenerBehaviours(t *testing.T) {
 	// verify if no default behaviour was removed
 	assert.Equal(t, totalDefaultBehaviours+1, len(hub.ListenerBehaviours))
 }
+
+func TestWithListenerBaseOptions(t *testing.T) {
+	hub := streamhub.NewHub()
+	assert.NotNil(t, hub.ListenerBaseOptions)
+
+	totalDefaultOpts := len(hub.ListenerBaseOptions)
+	hub = streamhub.NewHub(
+		streamhub.WithListenerBaseOptions(streamhub.WithGroup("foo")))
+	// verify if no default behaviour was removed
+	assert.Equal(t, totalDefaultOpts+1, len(hub.ListenerBaseOptions))
+}

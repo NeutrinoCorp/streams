@@ -9,6 +9,7 @@ type hubOptions struct {
 	schemaRegistry     SchemaRegistry
 	driver             ListenerDriver
 	listenerBehaviours []ListenerBehaviour
+	listenerBaseOpts   []ListenerNodeOption
 }
 
 // HubOption enables configuration of a Hub instance.
@@ -123,4 +124,17 @@ func (o listenerBehavioursOption) apply(opts *hubOptions) {
 // ListenerFunc or Listener component.
 func WithListenerBehaviours(b ...ListenerBehaviour) HubOption {
 	return listenerBehavioursOption{Behaviours: b}
+}
+
+type listenerBaseOptions struct {
+	BaseOpts []ListenerNodeOption
+}
+
+func (o listenerBaseOptions) apply(opts *hubOptions) {
+	opts.listenerBaseOpts = o.BaseOpts
+}
+
+// WithListenerBaseOptions sets a list of ListenerNodeOption of a Hub instance used as global options for each listener node
+func WithListenerBaseOptions(opts ...ListenerNodeOption) HubOption {
+	return listenerBaseOptions{BaseOpts: opts}
 }

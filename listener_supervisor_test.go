@@ -10,8 +10,8 @@ import (
 )
 
 func TestListenerSupervisor_ForkNode(t *testing.T) {
-	h := &Hub{}
-	sv := newListenerSupervisor(h, WithGroup("bar-queue"))
+	h := NewHub(WithListenerBaseOptions(WithGroup("bar-queue")))
+	sv := newListenerSupervisor(h)
 	sv.forkNode("")
 	assert.Equal(t, 0, len(sv.listenerRegistry))
 	sv.forkNode("foo")
@@ -32,8 +32,8 @@ func TestListenerSupervisor_ForkNode(t *testing.T) {
 }
 
 func BenchmarkListenerSupervisor_ForkNode(b *testing.B) {
-	h := &Hub{}
-	sv := newListenerSupervisor(h, WithGroup("bar-queue"), WithConcurrencyLevel(10))
+	h := NewHub(WithListenerBaseOptions(WithGroup("bar-queue"), WithConcurrencyLevel(10)))
+	sv := newListenerSupervisor(h)
 	var handler ListenerFunc
 	handler = func(_ context.Context, _ Message) error {
 		return nil
@@ -48,10 +48,10 @@ func TestListenerSupervisor_StartNodes(t *testing.T) {
 	baseCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
 	defer cancel()
 
-	h := NewHub()
-	sv := newListenerSupervisor(h, WithDriver(listenerDriverNoop{}), WithListenerFunc(func(ctx context.Context, message Message) error {
+	h := NewHub(WithListenerBaseOptions(WithDriver(listenerDriverNoop{}), WithListenerFunc(func(ctx context.Context, message Message) error {
 		return nil
-	}))
+	})))
+	sv := newListenerSupervisor(h)
 	sv.forkNode("foo")
 	sv.forkNode("foo")
 	sv.startNodes(baseCtx)

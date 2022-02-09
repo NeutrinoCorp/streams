@@ -9,15 +9,16 @@ const DefaultHubInstanceName = "com.streamhub"
 
 // Hub is the main component which enables interactions between several systems through the usage of streams.
 type Hub struct {
-	InstanceName       string
-	StreamRegistry     StreamRegistry
-	Publisher          Publisher
-	PublisherFunc      PublisherFunc
-	Marshaler          Marshaler
-	IDFactory          IDFactoryFunc
-	SchemaRegistry     SchemaRegistry
-	ListenerDriver     ListenerDriver
-	ListenerBehaviours []ListenerBehaviour
+	InstanceName        string
+	StreamRegistry      StreamRegistry
+	Publisher           Publisher
+	PublisherFunc       PublisherFunc
+	Marshaler           Marshaler
+	IDFactory           IDFactoryFunc
+	SchemaRegistry      SchemaRegistry
+	ListenerDriver      ListenerDriver
+	ListenerBehaviours  []ListenerBehaviour
+	ListenerBaseOptions []ListenerNodeOption
 
 	listenerSupervisor *listenerSupervisor
 }
@@ -29,15 +30,16 @@ func NewHub(opts ...HubOption) *Hub {
 		o.apply(&baseOpts)
 	}
 	h := &Hub{
-		StreamRegistry:     StreamRegistry{},
-		InstanceName:       baseOpts.instanceName,
-		Marshaler:          baseOpts.marshaler,
-		Publisher:          baseOpts.publisher,
-		PublisherFunc:      baseOpts.publisherFunc,
-		IDFactory:          baseOpts.idFactory,
-		SchemaRegistry:     baseOpts.schemaRegistry,
-		ListenerDriver:     baseOpts.driver,
-		ListenerBehaviours: append(listenerBaseBehaviours, baseOpts.listenerBehaviours...),
+		StreamRegistry:      StreamRegistry{},
+		InstanceName:        baseOpts.instanceName,
+		Marshaler:           baseOpts.marshaler,
+		Publisher:           baseOpts.publisher,
+		PublisherFunc:       baseOpts.publisherFunc,
+		IDFactory:           baseOpts.idFactory,
+		SchemaRegistry:      baseOpts.schemaRegistry,
+		ListenerDriver:      baseOpts.driver,
+		ListenerBehaviours:  append(listenerBaseBehaviours, baseOpts.listenerBehaviours...),
+		ListenerBaseOptions: baseOpts.listenerBaseOpts,
 	}
 	h.listenerSupervisor = newListenerSupervisor(h)
 	return h
@@ -46,10 +48,11 @@ func NewHub(opts ...HubOption) *Hub {
 // defines the fallback options of a Hub instance.
 func newHubDefaults() hubOptions {
 	return hubOptions{
-		instanceName:  DefaultHubInstanceName,
-		publisherFunc: NoopPublisherFunc,
-		marshaler:     JSONMarshaler{},
-		idFactory:     UuidIdFactory,
+		instanceName:     DefaultHubInstanceName,
+		publisherFunc:    NoopPublisherFunc,
+		marshaler:        JSONMarshaler{},
+		idFactory:        UuidIdFactory,
+		listenerBaseOpts: make([]ListenerNodeOption, 0),
 	}
 }
 
@@ -69,7 +72,7 @@ func (h *Hub) Listen(message interface{}, opts ...ListenerNodeOption) error {
 	if err != nil {
 		return err
 	}
-	h.listenerSupervisor.forkNode(metadata.Stream, opts...)
+	h.ListenByStreamKey(metadata.Stream, opts...)
 	return nil
 }
 

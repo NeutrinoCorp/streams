@@ -22,11 +22,11 @@ type listenerSupervisor struct {
 	baseListenerNodeOpts []ListenerNodeOption
 }
 
-func newListenerSupervisor(h *Hub, opts ...ListenerNodeOption) *listenerSupervisor {
+func newListenerSupervisor(h *Hub) *listenerSupervisor {
 	return &listenerSupervisor{
 		parentHub:            h,
 		listenerRegistry:     make([]ListenerNode, 0),
-		baseListenerNodeOpts: opts,
+		baseListenerNodeOpts: h.ListenerBaseOptions,
 	}
 }
 
