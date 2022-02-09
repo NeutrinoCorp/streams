@@ -16,7 +16,7 @@ type studentSignedUp struct {
 }
 
 func main() {
-	inMemBus := shmemory.NewBus()
+	inMemBus := shmemory.NewBus(0)
 	hub := streamhub.NewHub(
 		streamhub.WithPublisher(shmemory.NewPublisher(inMemBus)),
 		streamhub.WithListenerDriver(shmemory.NewListener(inMemBus)))

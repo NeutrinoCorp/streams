@@ -12,6 +12,7 @@ type listenerNodeOptions struct {
 	retryTimeout          time.Duration
 	providerConfiguration interface{}
 	driver                ListenerDriver
+	maxHandlerPoolSize    int
 }
 
 // ListenerNodeOption enables configuration of a ListenerNode.
@@ -142,4 +143,23 @@ func (o driverOption) apply(opts *listenerNodeOptions) {
 // WithDriver sets the driver of a ListenerNode (e.g. Apache Kafka, Apache Pulsar, Amazon SQS).
 func WithDriver(d ListenerDriver) ListenerNodeOption {
 	return driverOption{Driver: d}
+}
+
+type maxHandlerPoolSizeOption struct {
+	PoolSize int
+}
+
+func (o maxHandlerPoolSizeOption) apply(opts *listenerNodeOptions) {
+	opts.maxHandlerPoolSize = o.PoolSize
+}
+
+// WithMaxHandlerPoolSize sets the maximum number of goroutines executed by a ListenerNode's Listener or ListenerFunc.
+//
+// Note: If size was defined less or equal than 0, the ListenerNode internal implementations will allocate a semaphore
+// of 10 goroutines per handler.
+func WithMaxHandlerPoolSize(n int) ListenerNodeOption {
+	if n <= 0 {
+		n = DefaultMaxHandlerPoolSize
+	}
+	return maxHandlerPoolSizeOption{PoolSize: n}
 }

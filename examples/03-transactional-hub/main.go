@@ -41,7 +41,7 @@ var loggingListener streamhub.ListenerBehaviour = func(node *streamhub.ListenerN
 }
 
 func main() {
-	inMemBus := shmemory.NewBus()
+	inMemBus := shmemory.NewBus(0)
 	hub := streamhub.NewHub(
 		streamhub.WithIDFactory(streamhub.RandInt64Factory),
 		streamhub.WithListenerBehaviours(loggingListener),

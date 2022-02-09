@@ -12,7 +12,7 @@ import (
 func TestBus_Start(t *testing.T) {
 	assert.Equal(t, 2, runtime.NumGoroutine())
 
-	b := NewBus()
+	b := NewBus(0)
 	baseCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
 	defer cancel()
 	b.start(baseCtx)

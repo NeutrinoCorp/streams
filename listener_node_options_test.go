@@ -116,3 +116,20 @@ func TestWithDriver(t *testing.T) {
 	assert.EqualValues(t, listenerDriverNoop{},
 		hub.listenerSupervisor.listenerRegistry[0].ListenerDriver)
 }
+
+func TestWithMaxHandlerPoolSize(t *testing.T) {
+	opt := WithMaxHandlerPoolSize(-1)
+	assert.Implements(t, (*ListenerNodeOption)(nil), opt)
+
+	hub := NewHub()
+	hub.ListenByStreamKey("foo", opt)
+	assert.Equal(t, DefaultMaxHandlerPoolSize, hub.listenerSupervisor.listenerRegistry[0].MaxHandlerPoolSize)
+
+	opt = WithMaxHandlerPoolSize(0)
+	hub.ListenByStreamKey("bar", opt)
+	assert.Equal(t, DefaultMaxHandlerPoolSize, hub.listenerSupervisor.listenerRegistry[1].MaxHandlerPoolSize)
+
+	opt = WithMaxHandlerPoolSize(2)
+	hub.ListenByStreamKey("bar", opt)
+	assert.Equal(t, 2, hub.listenerSupervisor.listenerRegistry[2].MaxHandlerPoolSize)
+}

@@ -12,15 +12,20 @@ type Bus struct {
 	// key: Stream name | value: List of handlers
 	messageHandlers map[string][]streamhub.ListenerTask
 
-	startedBus bool
+	startedBus    bool
+	maxGoroutines int
 }
 
 // NewBus allocates a new Bus ready to be used
-func NewBus() *Bus {
+func NewBus(maxGoroutines int) *Bus {
+	if maxGoroutines <= 0 {
+		maxGoroutines = 100
+	}
 	return &Bus{
 		messageBuffer:   make(chan streamhub.Message),
 		messageHandlers: map[string][]streamhub.ListenerTask{},
 		startedBus:      false,
+		maxGoroutines:   maxGoroutines,
 	}
 }
 
@@ -45,20 +50,30 @@ func (b *Bus) publish(_ context.Context, message streamhub.Message) error {
 // start listen to the underlying message buffer queue that will be later used by publishers.
 // Inner operations will schedule stream-listeners if subscribed to the arrived message stream.
 //
-// In addition, the bus contains a very basic boolean lock to avoid multiple message buffer listening jobs running concurrently.
+// In addition, the bus contains a very basic boolean lock to avoid multiple message buffer listening jobs running
+// concurrently.
 func (b *Bus) start(ctx context.Context) {
 	if b.startedBus {
 		return
 	}
 	go func() {
+		sem := make(chan struct{}, b.maxGoroutines)
 		for msg := range b.messageBuffer {
+			select {
+			case sem <- struct{}{}:
+			}
 			for _, t := range b.messageHandlers[msg.Stream] {
 				go func(task streamhub.ListenerTask, message streamhub.Message) {
 					scopedCtx, cancel := context.WithTimeout(ctx, task.Timeout)
 					defer cancel()
+					defer func() { <-sem }()
 					_ = task.HandlerFunc(scopedCtx, message)
 				}(t, msg)
 			}
+		}
+		// acquire semaphore
+		for n := 0; n < b.maxGoroutines; n++ {
+			sem <- struct{}{}
 		}
 	}()
 	go func() {

@@ -14,7 +14,7 @@ import (
 func TestListenerDriver_ExecuteTask(t *testing.T) {
 	assert.Equal(t, 2, runtime.NumGoroutine())
 
-	d := shmemory.NewListener(shmemory.NewBus())
+	d := shmemory.NewListener(shmemory.NewBus(0))
 	baseCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
 	defer cancel()
 	err := d.ExecuteTask(baseCtx, streamhub.ListenerTask{

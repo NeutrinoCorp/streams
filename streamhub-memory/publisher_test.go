@@ -14,7 +14,7 @@ import (
 func TestPublisher_Publish(t *testing.T) {
 	assert.Equal(t, 2, runtime.NumGoroutine())
 
-	bus := streamhub_memory.NewBus()
+	bus := streamhub_memory.NewBus(0)
 	p := streamhub_memory.NewPublisher(bus)
 	err := p.Publish(context.Background(), streamhub.Message{
 		Stream: "foo-stream",

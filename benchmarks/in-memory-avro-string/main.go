@@ -21,7 +21,7 @@ func main() {
 	baseCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	b := streamhub_memory.NewBus()
+	b := streamhub_memory.NewBus(0)
 	hub := streamhub.NewHub(
 		streamhub.WithSchemaRegistry(newAvroSchemaRegistry()),
 		streamhub.WithMarshaler(streamhub.NewAvroMarshaler()),

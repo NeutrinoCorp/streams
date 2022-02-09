@@ -14,6 +14,8 @@ var (
 	DefaultRetryMaxInterval = time.Second * 15
 	// DefaultRetryTimeout default duration of each stream-listening job provisioning on failures.
 	DefaultRetryTimeout = time.Second * 15
+	// DefaultMaxHandlerPoolSize default pool size of goroutines for ListenerNode's Listener(s) / ListenerFunc(s) executions.
+	DefaultMaxHandlerPoolSize = 10
 )
 
 type listenerSupervisor struct {
@@ -41,6 +43,7 @@ func (s *listenerSupervisor) forkNode(stream string, opts ...ListenerNodeOption)
 		retryMaxInterval:     DefaultRetryMaxInterval,
 		retryTimeout:         DefaultRetryTimeout,
 		driver:               s.parentHub.ListenerDriver,
+		maxHandlerPoolSize:   DefaultMaxHandlerPoolSize,
 	}
 	for _, o := range s.baseListenerNodeOpts {
 		o.apply(&baseOpts)
@@ -59,6 +62,7 @@ func (s *listenerSupervisor) forkNode(stream string, opts ...ListenerNodeOption)
 		RetryMaxInterval:      baseOpts.retryMaxInterval,
 		RetryTimeout:          baseOpts.retryTimeout,
 		ListenerDriver:        baseOpts.driver,
+		MaxHandlerPoolSize:    baseOpts.maxHandlerPoolSize,
 	}
 	node.HandlerFunc = s.attachDefaultBehaviours(node)
 	s.listenerRegistry = append(s.listenerRegistry, *node)

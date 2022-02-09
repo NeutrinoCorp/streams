@@ -21,7 +21,7 @@ func main() {
 	baseCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	b := streamhub_memory.NewBus()
+	b := streamhub_memory.NewBus(10000)
 	hub := streamhub.NewHub(
 		streamhub.WithPublisher(streamhub_memory.NewPublisher(b)),
 		streamhub.WithListenerDriver(streamhub_memory.NewListener(b)))

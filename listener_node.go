@@ -18,6 +18,7 @@ type ListenerNode struct {
 	RetryMaxInterval      time.Duration
 	RetryTimeout          time.Duration
 	ListenerDriver        ListenerDriver
+	MaxHandlerPoolSize    int
 }
 
 // start schedules all workers of a ListenerNode.
