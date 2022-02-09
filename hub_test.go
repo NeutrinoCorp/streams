@@ -31,7 +31,6 @@ func TestHub_Publish(t *testing.T) {
 	})
 	assert.NoError(t, err)
 }
-
 func TestHub_Publish_Func(t *testing.T) {
 	hub := streamhub.NewHub(streamhub.WithSchemaRegistry(streamhub.NoopSchemaRegistry{}))
 	ctx := context.Background()
@@ -47,6 +46,51 @@ func TestHub_Publish_Func(t *testing.T) {
 	})
 	err = hub.Publish(ctx, fooMessage{
 		Foo: "foo",
+	})
+	assert.NoError(t, err)
+}
+
+type fooEvent struct {
+	Foo string `json:"foo"`
+	Bar string `json:"bar"`
+}
+
+var _ streamhub.Event = fooEvent{}
+
+func (f fooEvent) Subject() string {
+	return f.Bar
+}
+
+func TestHub_Publish_Event(t *testing.T) {
+	hub := streamhub.NewHub(streamhub.WithSchemaRegistry(streamhub.NoopSchemaRegistry{}))
+	ctx := context.Background()
+	hub.RegisterStream(fooMessage{}, streamhub.StreamMetadata{
+		Stream:               "foo-stream",
+		SchemaDefinitionName: "",
+		SchemaVersion:        0,
+	})
+	hub.RegisterStream(fooEvent{}, streamhub.StreamMetadata{
+		Stream:               "foo-stream",
+		SchemaDefinitionName: "",
+		SchemaVersion:        0,
+	})
+
+	hub.PublisherFunc = func(ctx context.Context, message streamhub.Message) error {
+		assert.Empty(t, message.Subject)
+		return nil
+	}
+	err := hub.Publish(ctx, fooMessage{
+		Foo: "foo",
+	})
+	assert.NoError(t, err)
+
+	hub.PublisherFunc = func(ctx context.Context, message streamhub.Message) error {
+		assert.Equal(t, "bar", message.Subject)
+		return nil
+	}
+	err = hub.Publish(ctx, fooEvent{
+		Foo: "foo",
+		Bar: "bar",
 	})
 	assert.NoError(t, err)
 }

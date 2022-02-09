@@ -133,7 +133,7 @@ func (h *Hub) publishMessage(ctx context.Context, metadata StreamMetadata, messa
 		return err
 	}
 
-	return h.PublishRawMessage(ctx, NewMessage(NewMessageArgs{
+	transportMsg := NewMessage(NewMessageArgs{
 		SchemaVersion:        metadata.SchemaVersion,
 		Data:                 data,
 		ID:                   id,
@@ -141,7 +141,13 @@ func (h *Hub) publishMessage(ctx context.Context, metadata StreamMetadata, messa
 		Stream:               metadata.Stream,
 		SchemaDefinitionName: metadata.SchemaDefinitionName,
 		ContentType:          h.Marshaler.ContentType(),
-	}))
+	})
+
+	event, ok := message.(Event)
+	if ok {
+		transportMsg.Subject = event.Subject()
+	}
+	return h.PublishRawMessage(ctx, transportMsg)
 }
 
 // PublishRawMessage inserts a raw transport message into a stream in order to propagate the data to a set

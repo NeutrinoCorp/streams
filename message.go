@@ -28,7 +28,8 @@ type Message struct {
 	DataContentType   string `json:"datacontenttype,omitempty"`
 	DataSchema        string `json:"dataschema,omitempty"`
 	DataSchemaVersion int    `json:"dataschemaversion,omitempty"`
-	Timestamp         int64  `json:"timestamp,omitempty"`
+	Timestamp         string `json:"time,omitempty"`
+	Subject           string `json:"subject,omitempty"`
 
 	// Streamhub fields
 	CorrelationID string `json:"correlation_id"`
@@ -49,6 +50,7 @@ type NewMessageArgs struct {
 	SchemaDefinitionName string
 	ContentType          string
 	GroupName            string
+	Subject              string
 }
 
 // NewMessage allocates an immutable Message ready to be transported in a stream.
@@ -64,7 +66,8 @@ func NewMessage(args NewMessageArgs) Message {
 		DataContentType:   args.ContentType,
 		DataSchema:        args.SchemaDefinitionName,
 		DataSchemaVersion: args.SchemaVersion,
-		Timestamp:         time.Now().Unix(),
+		Timestamp:         time.Now().UTC().Format(time.RFC3339),
+		Subject:           args.Subject,
 		GroupName:         args.GroupName,
 	}
 }
