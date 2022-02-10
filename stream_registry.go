@@ -57,7 +57,7 @@ func (r StreamRegistry) GetByString(key string) (StreamMetadata, error) {
 // This will increase time and space complexity of the fallback function by the GetByString base complexity.
 // Nevertheless, GetByString will be always constant, so it is guaranteed to keep
 // a constant complexity sum to the overall GetByStream complexity.
-// E.g. GetByString = 49.75 ns/op, hence, GetByStreamName = original ns/op + GetByString ns/op.
+// E.g. GetByString = 49.75 ns/op, therefore GetByStreamName = original ns/op + GetByString ns/op.
 //
 // This optimistic lookup is done in order to keep amortized time and space complexity when using non-reflection
 // based implementations on the root Hub (using only String methods from this very Stream Registry component). Thus,

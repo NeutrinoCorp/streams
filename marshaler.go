@@ -4,9 +4,9 @@ import (
 	"errors"
 	"hash"
 	"hash/fnv"
-	"sync"
 
 	"github.com/hamba/avro"
+	lru "github.com/hashicorp/golang-lru"
 	jsoniter "github.com/json-iterator/go"
 )
 
@@ -66,15 +66,16 @@ func (m JSONMarshaler) ContentType() string {
 //
 // Apache Avro REQUIRES a defined SchemaRegistry to decode/encode data.
 type AvroMarshaler struct {
-	cache          *sync.Map
+	cache          *lru.ARCCache
 	HashingFactory Hashing64AlgorithmFactory
 }
 
 // NewAvroMarshaler allocates a new Apache Avro marshaler with a simple caching system to reduce memory footprint and
 // computational usage when parsing Avro schema definition files.
 func NewAvroMarshaler() AvroMarshaler {
+	caching, _ := lru.NewARC(512)
 	return AvroMarshaler{
-		cache:          new(sync.Map),
+		cache:          caching,
 		HashingFactory: DefaultHashing64AlgorithmFactory,
 	}
 }
@@ -89,28 +90,38 @@ var DefaultHashing64AlgorithmFactory Hashing64AlgorithmFactory = func() hash.Has
 	return fnv.New64a()
 }
 
+func (a AvroMarshaler) lookupFromCache(schemaDef string) (avro.Schema, uint64, error) {
+	if a.cache == nil || schemaDef == "" {
+		return nil, 0, nil
+	}
+
+	var schemaAvro avro.Schema
+	var ok bool
+	hashingAlgorithm := a.HashingFactory()
+	_, err := hashingAlgorithm.Write([]byte(schemaDef))
+	if err != nil {
+		return nil, 0, err
+	}
+	hashKey := hashingAlgorithm.Sum64()
+	var schemaAvroMap interface{}
+	schemaAvroMap, ok = a.cache.Get(hashKey)
+	if ok {
+		schemaAvro = schemaAvroMap.(avro.Schema)
+	}
+	return schemaAvro, hashKey, nil
+}
+
 // Marshal transforms a complex data type into a primitive binary array for data transportation using Apache Avro format.
 func (a AvroMarshaler) Marshal(schemaDef string, data interface{}) (parsedData []byte, err error) {
-	var schemaAvro avro.Schema
-	if a.cache != nil {
-		var ok bool
-		hashingAlgorithm := a.HashingFactory()
-		_, err = hashingAlgorithm.Write([]byte(schemaDef))
-		if err != nil {
-			return nil, err
-		}
-		hashKey := hashingAlgorithm.Sum64()
-		var schemaAvroMap interface{}
-		schemaAvroMap, ok = a.cache.Load(hashKey)
-		if ok {
-			schemaAvro = schemaAvroMap.(avro.Schema)
-		}
-		defer func(specFound bool) {
-			if !ok {
-				a.cache.Store(hashKey, schemaAvro)
-			}
-		}(ok)
+	schemaAvro, hashKey, err := a.lookupFromCache(schemaDef)
+	if err != nil {
+		return nil, err
 	}
+	defer func(foundSchema bool) {
+		if !foundSchema {
+			a.cache.Add(hashKey, schemaAvro)
+		}
+	}(schemaAvro != nil)
 
 	if schemaAvro == nil {
 		schemaAvro, err = avro.Parse(schemaDef)
@@ -124,26 +135,15 @@ func (a AvroMarshaler) Marshal(schemaDef string, data interface{}) (parsedData [
 
 // Unmarshal transforms a primitive binary array to a complex data type for data processing using Apache Avro format.
 func (a AvroMarshaler) Unmarshal(schemaDef string, data []byte, ref interface{}) (err error) {
-	var schemaAvro avro.Schema
-	if a.cache != nil {
-		var ok bool
-		hashingAlgorithm := a.HashingFactory()
-		_, err = hashingAlgorithm.Write([]byte(schemaDef))
-		if err != nil {
-			return err
-		}
-		hashKey := hashingAlgorithm.Sum64()
-		var schemaAvroMap interface{}
-		schemaAvroMap, ok = a.cache.Load(hashKey)
-		if ok {
-			schemaAvro = schemaAvroMap.(avro.Schema)
-		}
-		defer func(specFound bool) {
-			if !ok {
-				a.cache.Store(hashKey, schemaAvro)
-			}
-		}(ok)
+	schemaAvro, hashKey, err := a.lookupFromCache(schemaDef)
+	if err != nil {
+		return err
 	}
+	defer func(foundSchema bool) {
+		if !foundSchema {
+			a.cache.Add(hashKey, schemaAvro)
+		}
+	}(schemaAvro != nil)
 
 	if schemaAvro == nil {
 		schemaAvro, err = avro.Parse(schemaDef)
