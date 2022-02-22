@@ -2,6 +2,7 @@ package streamhub_test
 
 import (
 	"context"
+	"errors"
 	"runtime"
 	"strconv"
 	"testing"
@@ -12,9 +13,8 @@ import (
 )
 
 func TestHub_Publish(t *testing.T) {
-	hub := streamhub.NewHub(streamhub.WithSchemaRegistry(streamhub.NoopSchemaRegistry{}),
-		streamhub.WithPublisher(streamhub.NoopPublisher))
-	hub.PublisherFunc = nil
+	hub := streamhub.NewHub(streamhub.WithSchemaRegistry(streamhub.NoopSchemaRegistry{}))
+	hub.Publisher = nil
 	ctx := context.Background()
 	err := hub.Publish(ctx, fooMessage{
 		Foo: "foo",
@@ -29,8 +29,48 @@ func TestHub_Publish(t *testing.T) {
 	err = hub.Publish(ctx, fooMessage{
 		Foo: "foo",
 	})
+	assert.ErrorIs(t, err, streamhub.ErrMissingPublisherDriver)
+
+	hub.Publisher = streamhub.NoopPublisher
+	err = hub.Publish(ctx, fooMessage{
+		Foo: "foo",
+	})
 	assert.NoError(t, err)
 }
+
+func TestHub_PublishBatch(t *testing.T) {
+	hub := streamhub.NewHub(streamhub.WithSchemaRegistry(streamhub.NoopSchemaRegistry{}))
+	hub.Publisher = nil
+	ctx := context.Background()
+	err := hub.PublishBatch(ctx, fooMessage{
+		Foo: "foo",
+	})
+	assert.ErrorIs(t, err, streamhub.ErrMissingStream)
+
+	hub.RegisterStream(fooMessage{}, streamhub.StreamMetadata{
+		Stream:               "foo-stream",
+		SchemaDefinitionName: "",
+		SchemaVersion:        0,
+	})
+	err = hub.PublishBatch(ctx, fooMessage{
+		Foo: "foo",
+	})
+	assert.ErrorIs(t, err, streamhub.ErrMissingPublisherDriver)
+
+	hub.Publisher = streamhub.NoopPublisher
+	hub.IDFactory = failingFakeIDFactory
+	err = hub.PublishBatch(ctx, fooMessage{
+		Foo: "foo",
+	})
+	assert.EqualValues(t, errors.New("generic id factory error"), err)
+
+	hub.IDFactory = streamhub.RandInt64Factory
+	err = hub.PublishBatch(ctx, fooMessage{
+		Foo: "foo",
+	})
+	assert.NoError(t, err)
+}
+
 func TestHub_Publish_Func(t *testing.T) {
 	hub := streamhub.NewHub(streamhub.WithSchemaRegistry(streamhub.NoopSchemaRegistry{}))
 	ctx := context.Background()
@@ -75,7 +115,9 @@ func TestHub_Publish_Event(t *testing.T) {
 		SchemaVersion:        0,
 	})
 
-	hub.PublisherFunc = func(ctx context.Context, message streamhub.Message) error {
+	noopPublisher := &publisherNoopHook{}
+	hub.Publisher = noopPublisher
+	noopPublisher.onPublish = func(ctx context.Context, message streamhub.Message) error {
 		assert.Empty(t, message.Subject)
 		return nil
 	}
@@ -84,7 +126,7 @@ func TestHub_Publish_Event(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	hub.PublisherFunc = func(ctx context.Context, message streamhub.Message) error {
+	noopPublisher.onPublish = func(ctx context.Context, message streamhub.Message) error {
 		assert.Equal(t, "bar", message.Subject)
 		return nil
 	}
@@ -143,6 +185,51 @@ func TestHub_PublishRawMessage(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestHub_PublishRawMessageBatch(t *testing.T) {
+	hub := streamhub.NewHub()
+	hub.Publisher = nil
+	ctx := context.Background()
+
+	messageBuffer := []streamhub.Message{
+		streamhub.NewMessage(streamhub.NewMessageArgs{
+			SchemaVersion:        9,
+			Data:                 []byte("hello foo"),
+			ID:                   "123",
+			Source:               "",
+			Stream:               "foo-stream",
+			SchemaDefinitionName: "",
+			ContentType:          "",
+		}), streamhub.NewMessage(streamhub.NewMessageArgs{
+			SchemaVersion:        9,
+			Data:                 []byte("hello bar"),
+			ID:                   "abc",
+			Source:               "",
+			Stream:               "bar-stream",
+			SchemaDefinitionName: "",
+			ContentType:          "",
+		}),
+	}
+
+	err := hub.PublishRawMessageBatch(ctx, messageBuffer...)
+	assert.ErrorIs(t, err, streamhub.ErrMissingPublisherDriver)
+
+	totalMessagesPushed := 0
+	hub.Publisher = publisherNoopHook{
+		onPublishBatch: func(_ context.Context, messages ...streamhub.Message) error {
+			totalMessagesPushed = len(messages)
+			return nil
+		},
+	}
+	err = hub.PublishRawMessageBatch(ctx, messageBuffer...)
+	assert.NoError(t, err)
+	assert.Equal(t, len(messageBuffer), totalMessagesPushed)
+
+	// testing noopPublisher from streamhub package to increase test coverage
+	hub.Publisher = streamhub.NoopPublisher
+	err = hub.PublishRawMessageBatch(ctx, messageBuffer...)
+	assert.NoError(t, err)
+}
+
 func TestHub_PublishInMemorySchemaRegistry(t *testing.T) {
 	r := streamhub.InMemorySchemaRegistry{}
 	hub := streamhub.NewHub(streamhub.WithSchemaRegistry(r))
@@ -179,6 +266,39 @@ func TestHub_PublishByMessageKey(t *testing.T) {
 	})
 	err = hub.PublishByMessageKey(ctx, "foo_custom", fooMessage{
 		Foo: "custom",
+	})
+	assert.NoError(t, err)
+}
+
+func TestHub_PublishByMessageKeyBatch(t *testing.T) {
+	hub := streamhub.NewHub(streamhub.WithSchemaRegistry(streamhub.NoopSchemaRegistry{}))
+	ctx := context.Background()
+	err := hub.PublishByMessageKeyBatch(ctx, map[string]interface{}{
+		"foo": fooMessage{
+			Foo: "foo",
+		},
+	})
+	assert.ErrorIs(t, err, streamhub.ErrMissingStream)
+
+	hub.RegisterStreamByString("foo_custom", streamhub.StreamMetadata{
+		Stream:               "foo-stream",
+		SchemaDefinitionName: "",
+		SchemaVersion:        0,
+	})
+
+	hub.IDFactory = failingFakeIDFactory
+	err = hub.PublishByMessageKeyBatch(ctx, map[string]interface{}{
+		"foo_custom": fooMessage{
+			Foo: "custom",
+		},
+	})
+	assert.EqualValues(t, errors.New("generic id factory error"), err)
+
+	hub.IDFactory = streamhub.RandInt64Factory
+	err = hub.PublishByMessageKeyBatch(ctx, map[string]interface{}{
+		"foo_custom": fooMessage{
+			Foo: "custom",
+		},
 	})
 	assert.NoError(t, err)
 }

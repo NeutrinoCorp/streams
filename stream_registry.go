@@ -20,6 +20,11 @@ type StreamMetadata struct {
 // retrieve information about a specific stream.
 //
 // Uses a custom string (or Go's struct type as string) as key.
+//
+// Note: A message key differs from stream name as the message key COULD be anything the developer sets within the
+// stream registry. Thus, scenarios where multiple data types require publishing messages to the same stream are possible.
+// Moreover, the message key is set by reflection-based registries with the reflect.TypeOf function, so it will differ
+// from the actual stream name.
 type StreamRegistry map[string]StreamMetadata
 
 // Set creates a relation between a stream message type and metadata.

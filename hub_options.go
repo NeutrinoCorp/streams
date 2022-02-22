@@ -3,7 +3,6 @@ package streamhub
 type hubOptions struct {
 	instanceName       string
 	publisher          Publisher
-	publisherFunc      PublisherFunc
 	marshaler          Marshaler
 	idFactory          IDFactoryFunc
 	schemaRegistry     SchemaRegistry
@@ -28,21 +27,6 @@ func (o instanceNameOption) apply(opts *hubOptions) {
 // WithInstanceName sets the name of a Hub instance.
 func WithInstanceName(n string) HubOption {
 	return instanceNameOption{Instance: n}
-}
-
-type publisherFuncOption struct {
-	PublisherFunc PublisherFunc
-}
-
-func (o publisherFuncOption) apply(opts *hubOptions) {
-	opts.publisherFunc = o.PublisherFunc
-}
-
-// WithPublisherFunc sets the publisher function of a Hub instance.
-//
-// If both Publisher and PublisherFunc are defined, Publisher will override PublisherFunc.
-func WithPublisherFunc(p PublisherFunc) HubOption {
-	return publisherFuncOption{PublisherFunc: p}
 }
 
 type publisherOption struct {
