@@ -5,7 +5,7 @@ import (
 )
 
 // DefaultHubInstanceName default instance names for nameless Hub instances
-const DefaultHubInstanceName = "com.streamhub"
+var DefaultHubInstanceName = "com.streamhub"
 
 // Hub is the main component which enables interactions between several systems through the usage of streams.
 type Hub struct {
@@ -96,6 +96,34 @@ func (h *Hub) Publish(ctx context.Context, message interface{}) error {
 	return h.publishMessage(ctx, metadata, message)
 }
 
+// PublishBatch inserts a set of messages into a stream assigned on the StreamRegistry in order to propagate the
+// data to a set of subscribed systems for further processing.
+//
+// Uses given context to inject correlation and causation IDs.
+//
+// If an item from the batch fails, other items will fail too
+func (h *Hub) PublishBatch(ctx context.Context, messages ...interface{}) error {
+	var (
+		metadata               StreamMetadata
+		transportMessageBuffer = make([]Message, len(messages))
+		transportMessage       Message
+		err                    error
+	)
+	for _, msg := range messages {
+		metadata, err = h.StreamRegistry.Get(msg)
+		if err != nil {
+			return err
+		}
+		transportMessage, err = h.buildTransportMessage(ctx, metadata, msg)
+		if err != nil {
+			return err
+		}
+		transportMessageBuffer = append(transportMessageBuffer, transportMessage)
+	}
+
+	return h.PublishRawMessageBatch(ctx, transportMessageBuffer...)
+}
+
 // PublishByMessageKey inserts a message into a stream using the custom message key from StreamRegistry in order to
 // propagate the data to a set of subscribed systems for further processing.
 //
@@ -108,27 +136,58 @@ func (h *Hub) PublishByMessageKey(ctx context.Context, messageKey string, messag
 	return h.publishMessage(ctx, metadata, message)
 }
 
+// PublishByMessageKeyBatchItems items to be published as batch on the Hub.PublishByMessageKeyBatch() function
+type PublishByMessageKeyBatchItems map[string]interface{}
+
+// PublishByMessageKeyBatch inserts a set of messages into a stream using the custom message key from StreamRegistry in order to
+// propagate the data to a set of subscribed systems for further processing.
+//
+// Uses given context to inject correlation and causation IDs.
+//
+// If an item from the batch fails, other items will fail too
+func (h *Hub) PublishByMessageKeyBatch(ctx context.Context, items PublishByMessageKeyBatchItems) error {
+	var (
+		metadata               StreamMetadata
+		transportMessageBuffer = make([]Message, len(items))
+		transportMessage       Message
+		err                    error
+	)
+	for messageKey, msg := range items {
+		metadata, err = h.StreamRegistry.GetByString(messageKey)
+		if err != nil {
+			return err
+		}
+		transportMessage, err = h.buildTransportMessage(ctx, metadata, msg)
+		if err != nil {
+			return err
+		}
+		transportMessageBuffer = append(transportMessageBuffer, transportMessage)
+	}
+
+	return h.PublishRawMessageBatch(ctx, transportMessageBuffer...)
+}
+
 // transforms a primitive message into a CloudEvent message ready for transportation. Therefore, executes a
 // message publishing job.
-func (h *Hub) publishMessage(ctx context.Context, metadata StreamMetadata, message interface{}) error {
+func (h *Hub) buildTransportMessage(ctx context.Context, metadata StreamMetadata, message interface{}) (Message, error) {
 	schemaDef := ""
 	var err error
 	if h.SchemaRegistry != nil {
 		schemaDef, err = h.SchemaRegistry.GetSchemaDefinition(metadata.SchemaDefinitionName,
 			metadata.SchemaVersion)
 		if err != nil {
-			return err
+			return Message{}, err
 		}
 	}
 
 	data, err := h.Marshaler.Marshal(schemaDef, message)
 	if err != nil {
-		return err
+		return Message{}, err
 	}
 
 	id, err := h.IDFactory()
 	if err != nil {
-		return err
+		return Message{}, err
 	}
 
 	transportMsg := NewMessage(NewMessageArgs{
@@ -140,10 +199,22 @@ func (h *Hub) publishMessage(ctx context.Context, metadata StreamMetadata, messa
 		SchemaDefinitionName: metadata.SchemaDefinitionName,
 		ContentType:          h.Marshaler.ContentType(),
 	})
+	transportMsg.CorrelationID = InjectMessageCorrelationID(ctx, transportMsg.ID)
+	transportMsg.CausationID = InjectMessageCausationID(ctx, transportMsg.CorrelationID)
 
 	event, ok := message.(Event)
 	if ok {
 		transportMsg.Subject = event.Subject()
+	}
+
+	return transportMsg, nil
+}
+
+// pushes a single message into a stream using cloud events marshaling
+func (h *Hub) publishMessage(ctx context.Context, metadata StreamMetadata, message interface{}) error {
+	transportMsg, err := h.buildTransportMessage(ctx, metadata, message)
+	if err != nil {
+		return err
 	}
 	return h.PublishRawMessage(ctx, transportMsg)
 }
@@ -156,9 +227,6 @@ func (h *Hub) PublishRawMessage(ctx context.Context, message Message) error {
 	if h.Publisher == nil {
 		return ErrMissingPublisherDriver
 	}
-
-	message.CorrelationID = InjectMessageCorrelationID(ctx, message.ID)
-	message.CausationID = InjectMessageCausationID(ctx, message.CorrelationID)
 	return h.Publisher.Publish(ctx, message)
 }
 
@@ -172,12 +240,6 @@ func (h *Hub) PublishRawMessage(ctx context.Context, message Message) error {
 func (h *Hub) PublishRawMessageBatch(ctx context.Context, messages ...Message) error {
 	if h.Publisher == nil {
 		return ErrMissingPublisherDriver
-	}
-
-	// do not use for each to avoid extra malloc and data copies
-	for i := 0; i < len(messages); i++ {
-		messages[i].CorrelationID = InjectMessageCorrelationID(ctx, messages[i].ID)
-		messages[i].CausationID = InjectMessageCausationID(ctx, messages[i].CorrelationID)
 	}
 	return h.Publisher.PublishBatch(ctx, messages...)
 }

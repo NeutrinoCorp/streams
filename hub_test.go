@@ -2,6 +2,7 @@ package streamhub_test
 
 import (
 	"context"
+	"errors"
 	"runtime"
 	"strconv"
 	"testing"
@@ -32,6 +33,39 @@ func TestHub_Publish(t *testing.T) {
 
 	hub.Publisher = streamhub.NoopPublisher
 	err = hub.Publish(ctx, fooMessage{
+		Foo: "foo",
+	})
+	assert.NoError(t, err)
+}
+
+func TestHub_PublishBatch(t *testing.T) {
+	hub := streamhub.NewHub(streamhub.WithSchemaRegistry(streamhub.NoopSchemaRegistry{}))
+	hub.Publisher = nil
+	ctx := context.Background()
+	err := hub.PublishBatch(ctx, fooMessage{
+		Foo: "foo",
+	})
+	assert.ErrorIs(t, err, streamhub.ErrMissingStream)
+
+	hub.RegisterStream(fooMessage{}, streamhub.StreamMetadata{
+		Stream:               "foo-stream",
+		SchemaDefinitionName: "",
+		SchemaVersion:        0,
+	})
+	err = hub.PublishBatch(ctx, fooMessage{
+		Foo: "foo",
+	})
+	assert.ErrorIs(t, err, streamhub.ErrMissingPublisherDriver)
+
+	hub.Publisher = streamhub.NoopPublisher
+	hub.IDFactory = failingFakeIDFactory
+	err = hub.PublishBatch(ctx, fooMessage{
+		Foo: "foo",
+	})
+	assert.EqualValues(t, errors.New("generic id factory error"), err)
+
+	hub.IDFactory = streamhub.RandInt64Factory
+	err = hub.PublishBatch(ctx, fooMessage{
 		Foo: "foo",
 	})
 	assert.NoError(t, err)
@@ -232,6 +266,39 @@ func TestHub_PublishByMessageKey(t *testing.T) {
 	})
 	err = hub.PublishByMessageKey(ctx, "foo_custom", fooMessage{
 		Foo: "custom",
+	})
+	assert.NoError(t, err)
+}
+
+func TestHub_PublishByMessageKeyBatch(t *testing.T) {
+	hub := streamhub.NewHub(streamhub.WithSchemaRegistry(streamhub.NoopSchemaRegistry{}))
+	ctx := context.Background()
+	err := hub.PublishByMessageKeyBatch(ctx, map[string]interface{}{
+		"foo": fooMessage{
+			Foo: "foo",
+		},
+	})
+	assert.ErrorIs(t, err, streamhub.ErrMissingStream)
+
+	hub.RegisterStreamByString("foo_custom", streamhub.StreamMetadata{
+		Stream:               "foo-stream",
+		SchemaDefinitionName: "",
+		SchemaVersion:        0,
+	})
+
+	hub.IDFactory = failingFakeIDFactory
+	err = hub.PublishByMessageKeyBatch(ctx, map[string]interface{}{
+		"foo_custom": fooMessage{
+			Foo: "custom",
+		},
+	})
+	assert.EqualValues(t, errors.New("generic id factory error"), err)
+
+	hub.IDFactory = streamhub.RandInt64Factory
+	err = hub.PublishByMessageKeyBatch(ctx, map[string]interface{}{
+		"foo_custom": fooMessage{
+			Foo: "custom",
+		},
 	})
 	assert.NoError(t, err)
 }
