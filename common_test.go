@@ -54,3 +54,24 @@ func (h hashing64AlgorithmFailingNoop) BlockSize() int {
 func (h hashing64AlgorithmFailingNoop) Sum64() uint64 {
 	return 0
 }
+
+type publisherNoopHook struct {
+	onPublish      func(context.Context, streamhub.Message) error
+	onPublishBatch func(context.Context, ...streamhub.Message) error
+}
+
+var _ streamhub.Publisher = publisherNoopHook{}
+
+func (p publisherNoopHook) Publish(ctx context.Context, message streamhub.Message) error {
+	if p.onPublish != nil {
+		return p.onPublish(ctx, message)
+	}
+	return nil
+}
+
+func (p publisherNoopHook) PublishBatch(ctx context.Context, messages ...streamhub.Message) error {
+	if p.onPublishBatch != nil {
+		return p.onPublishBatch(ctx, messages...)
+	}
+	return nil
+}

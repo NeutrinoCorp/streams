@@ -26,3 +26,13 @@ func NewPublisher(b *Bus) *Publisher {
 func (p *Publisher) Publish(ctx context.Context, message streamhub.Message) error {
 	return p.b.publish(ctx, message)
 }
+
+// PublishBatch pushes the given set of messages into the internal in-memory Bus
+func (p *Publisher) PublishBatch(ctx context.Context, messages ...streamhub.Message) (err error) {
+	for _, msg := range messages {
+		if errPub := p.b.publish(ctx, msg); errPub != nil {
+			err = errPub
+		}
+	}
+	return
+}

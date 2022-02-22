@@ -12,7 +12,6 @@ type Hub struct {
 	InstanceName        string
 	StreamRegistry      StreamRegistry
 	Publisher           Publisher
-	PublisherFunc       PublisherFunc
 	Marshaler           Marshaler
 	IDFactory           IDFactoryFunc
 	SchemaRegistry      SchemaRegistry
@@ -34,7 +33,6 @@ func NewHub(opts ...HubOption) *Hub {
 		InstanceName:        baseOpts.instanceName,
 		Marshaler:           baseOpts.marshaler,
 		Publisher:           baseOpts.publisher,
-		PublisherFunc:       baseOpts.publisherFunc,
 		IDFactory:           baseOpts.idFactory,
 		SchemaRegistry:      baseOpts.schemaRegistry,
 		ListenerDriver:      baseOpts.driver,
@@ -49,7 +47,7 @@ func NewHub(opts ...HubOption) *Hub {
 func newHubDefaults() hubOptions {
 	return hubOptions{
 		instanceName:     DefaultHubInstanceName,
-		publisherFunc:    NoopPublisherFunc,
+		publisher:        NoopPublisher,
 		marshaler:        JSONMarshaler{},
 		idFactory:        UuidIdFactory,
 		listenerBaseOpts: make([]ListenerNodeOption, 0),
@@ -155,10 +153,31 @@ func (h *Hub) publishMessage(ctx context.Context, metadata StreamMetadata, messa
 //
 // Uses given context to inject correlation and causation IDs.
 func (h *Hub) PublishRawMessage(ctx context.Context, message Message) error {
+	if h.Publisher == nil {
+		return ErrMissingPublisherDriver
+	}
+
 	message.CorrelationID = InjectMessageCorrelationID(ctx, message.ID)
 	message.CausationID = InjectMessageCausationID(ctx, message.CorrelationID)
-	if h.Publisher != nil {
-		return h.Publisher.Publish(ctx, message)
+	return h.Publisher.Publish(ctx, message)
+}
+
+// PublishRawMessageBatch inserts a set of raw transport message into a stream in order to propagate the data to a set
+// of subscribed systems for further processing.
+//
+// Uses given context to inject correlation and causation IDs.
+//
+// The whole batch will be passed to the underlying Publisher driver implementation as every driver has its own way to
+// deal with batches
+func (h *Hub) PublishRawMessageBatch(ctx context.Context, messages ...Message) error {
+	if h.Publisher == nil {
+		return ErrMissingPublisherDriver
 	}
-	return h.PublisherFunc(ctx, message)
+
+	// do not use for each to avoid extra malloc and data copies
+	for i := 0; i < len(messages); i++ {
+		messages[i].CorrelationID = InjectMessageCorrelationID(ctx, messages[i].ID)
+		messages[i].CausationID = InjectMessageCausationID(ctx, messages[i].CorrelationID)
+	}
+	return h.Publisher.PublishBatch(ctx, messages...)
 }
