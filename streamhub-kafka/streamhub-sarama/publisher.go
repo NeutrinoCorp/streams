@@ -120,6 +120,21 @@ func newProducerMessage(marshaler streamhub.Marshaler, strategy PublisherStrateg
 	return producerMsg, nil
 }
 
+// newProducerMessage generates a set of sarama.ProducerMessage(s) using the given strategy and, if applies, the given marshaler
+// to encode the streamhub.Message into the Kafka Value field
+func newProducerMessageBatch(marshaler streamhub.Marshaler, strategy PublisherStrategy,
+	messages ...streamhub.Message) ([]*sarama.ProducerMessage, error) {
+	transportMsgsBuffer := make([]*sarama.ProducerMessage, 0, len(messages))
+	for _, msg := range messages {
+		transportMsg, err := newProducerMessage(marshaler, strategy, msg)
+		if err != nil {
+			return nil, err
+		}
+		transportMsgsBuffer = append(transportMsgsBuffer, transportMsg)
+	}
+	return transportMsgsBuffer, nil
+}
+
 // SyncPublisher is the blocking-IO implementation for producing messages into an Apache Kafka cluster.
 type SyncPublisher struct {
 	Producer  sarama.SyncProducer
@@ -141,68 +156,21 @@ func NewSyncPublisher(producer sarama.SyncProducer, marshaler streamhub.Marshale
 	}
 }
 
-// Publish produces a message into an Apache Kafka cluster.
+// Publish produces a message into an Apache Kafka cluster
 func (p *SyncPublisher) Publish(_ context.Context, message streamhub.Message) error {
-	pMessage, err := newProducerMessage(p.Marshaler, p.Strategy, message)
+	transportMsg, err := newProducerMessage(p.Marshaler, p.Strategy, message)
 	if err != nil {
 		return err
 	}
-	_, _, err = p.Producer.SendMessage(pMessage)
+	_, _, err = p.Producer.SendMessage(transportMsg)
 	return err
 }
 
-func (p *SyncPublisher) PublishBatch(ctx context.Context, messages ...streamhub.Message) error {
-	panic("implement me")
-}
-
-// PublisherErrorHook is a function which will be triggered after an error is detected when producing a message
-// to an Apache Kafka cluster.
-//
-// Only works with AsyncPublisher at the moment
-type PublisherErrorHook func(*sarama.ProducerError)
-
-// AsyncPublisher is the non blocking-IO message producer. Useful in high-performance and high-concurrence scenarios as
-// it relies on Go's channels to produce messages to an Apache Kafka cluster
-type AsyncPublisher struct {
-	Producer  sarama.AsyncProducer
-	Strategy  PublisherStrategy
-	Marshaler streamhub.Marshaler
-}
-
-var _ streamhub.Publisher = &AsyncPublisher{}
-
-// NewAsyncPublisher allocates a new AsyncPublisher instance ready to be used.
-//
-// If no PublisherStrategy was found, PublisherRoundRobinStrategy will be used in place
-func NewAsyncPublisher(producer sarama.AsyncProducer, marshaler streamhub.Marshaler, errorHook PublisherErrorHook,
-	strategy PublisherStrategy) *AsyncPublisher {
-	strategy = getDefaultProducerStrategy(strategy)
-	if errorHook != nil {
-		go func() {
-			for err := range producer.Errors() {
-				errorHook(err)
-			}
-		}()
-	}
-	return &AsyncPublisher{
-		Producer:  producer,
-		Strategy:  strategy,
-		Marshaler: marshaler,
-	}
-}
-
-// Publish produces a message to an Apache Kafka cluster without blocking the IO.
-//
-// The underlying publishing module WILL NOT return an error as the operation will be executed asynchronously
-func (p *AsyncPublisher) Publish(_ context.Context, message streamhub.Message) error {
-	pMessage, err := newProducerMessage(p.Marshaler, p.Strategy, message)
+// PublishBatch produces a set of messages into an Apache Kafka cluster
+func (p *SyncPublisher) PublishBatch(_ context.Context, messages ...streamhub.Message) error {
+	transportMsgsBuffer, err := newProducerMessageBatch(p.Marshaler, p.Strategy, messages...)
 	if err != nil {
 		return err
 	}
-	p.Producer.Input() <- pMessage
-	return nil
-}
-
-func (p *AsyncPublisher) PublishBatch(ctx context.Context, messages ...streamhub.Message) error {
-	panic("implement me")
+	return p.Producer.SendMessages(transportMsgsBuffer)
 }

@@ -3,6 +3,8 @@ package streamhub_sarama_test
 import (
 	"context"
 	"errors"
+	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -18,8 +20,7 @@ var (
 	defaultTopicReplicationFactor int16 = 3
 	defaultOperationTimeout             = time.Second * 10
 
-	studentApprovedTopic  = "org.ncorp.proton.student.approved"
-	studentSuspendedTopic = "org.ncorp.proton.student.suspended"
+	studentApprovedTopic = "org.ncorp.proton.student.approved"
 )
 
 func newSaramaConfig() *sarama.Config {
@@ -63,44 +64,47 @@ func newPreconfiguredHub(opts ...streamhub.HubOption) *streamhub.Hub {
 	return hub
 }
 
-func newPreconfiguredHubAsync(opts ...streamhub.HubOption) *streamhub.Hub {
-	opts = append(opts, streamhub.WithInstanceName(defaultSaramaConfig.ClientID))
-	hub := streamhub.NewHub(opts...)
-	hub.RegisterStream(studentApproved{}, streamhub.StreamMetadata{
-		Stream: studentSuspendedTopic,
-	})
-	return hub
-}
-
 type messageMetadata struct {
 	Partition int32
 	Offset    int64
 }
 
 type messageAtomicStack struct {
-	stack []messageMetadata
+	stack map[string]messageMetadata
 	mu    sync.RWMutex
+}
+
+func (m *messageAtomicStack) buildHashKey(partition int32, offset int64) string {
+	b := strings.Builder{}
+	partitionStr := strconv.Itoa(int(partition))
+	offsetStr := strconv.Itoa(int(offset))
+	b.WriteString(partitionStr)
+	b.WriteString("#")
+	b.WriteString(offsetStr)
+	return b.String()
 }
 
 func (m *messageAtomicStack) set(metadata messageMetadata) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.stack = append(m.stack, metadata)
-}
 
-func (m *messageAtomicStack) getStack() []messageMetadata {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.stack
+	key := m.buildHashKey(metadata.Partition, metadata.Offset)
+	m.stack[key] = metadata
 }
 
 func (m *messageAtomicStack) hasItem(message *sarama.ConsumerMessage) bool {
-	for _, msg := range m.getStack() {
-		if message.Partition == msg.Partition && message.Offset == msg.Offset {
-			return true
-		}
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	key := m.buildHashKey(message.Partition, message.Offset)
+	msg, ok := m.stack[key]
+	if !ok {
+		return false
+	} else if message.Partition != msg.Partition && message.Offset != msg.Offset {
+		return false
 	}
-	return false
+
+	return true
 }
 
 type consumerGroupHandlerMiddleware func(message *sarama.ConsumerMessage) error

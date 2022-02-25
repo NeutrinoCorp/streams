@@ -43,7 +43,7 @@ func (s *syncPublisherTestSuite) SetupSuite() {
 	s.cleanTopic()
 	s.setupTopic()
 	s.publishedMessages = &messageAtomicStack{
-		stack: make([]messageMetadata, 0),
+		stack: make(map[string]messageMetadata, 0),
 		mu:    sync.RWMutex{},
 	}
 }
