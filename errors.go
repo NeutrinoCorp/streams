@@ -2,5 +2,9 @@ package streamhub
 
 import "errors"
 
-// ErrMissingPublisherDriver no publisher driver was found
-var ErrMissingPublisherDriver = errors.New("streamhub: Missing publisher driver")
+var (
+	// ErrInvalidProviderConfiguration the configuration provided for a Third-party Driver was not valid
+	ErrInvalidProviderConfiguration = errors.New("streamhub: Invalid provider configuration")
+	// ErrMissingPublisherDriver no publisher driver was found
+	ErrMissingPublisherDriver = errors.New("streamhub: Missing publisher driver")
+)
