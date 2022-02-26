@@ -3,9 +3,12 @@ package streamhub
 import "time"
 
 type listenerNodeOptions struct {
+	hosts                 []string
 	listener              Listener
 	listenerFunc          ListenerFunc
 	group                 string
+	retryStream           string
+	deadLetterStream      string
 	concurrencyLevel      int
 	retryInitialInterval  time.Duration
 	retryMaxInterval      time.Duration
@@ -162,4 +165,43 @@ func WithMaxHandlerPoolSize(n int) ListenerNodeOption {
 		n = DefaultMaxHandlerPoolSize
 	}
 	return maxHandlerPoolSizeOption{PoolSize: n}
+}
+
+type hostsOption struct {
+	Hosts []string
+}
+
+func (o hostsOption) apply(opts *listenerNodeOptions) {
+	opts.hosts = o.Hosts
+}
+
+// WithHosts sets the infrastructure host addresses used by a ListenerNode
+func WithHosts(addr ...string) ListenerNodeOption {
+	return hostsOption{Hosts: addr}
+}
+
+type retryStreamOption struct {
+	Stream string
+}
+
+func (o retryStreamOption) apply(opts *listenerNodeOptions) {
+	opts.retryStream = o.Stream
+}
+
+// WithRetryStream sets the retry stream for a ListenerNode
+func WithRetryStream(s string) ListenerNodeOption {
+	return retryStreamOption{Stream: s}
+}
+
+type deadLetterStreamOption struct {
+	Stream string
+}
+
+func (o deadLetterStreamOption) apply(opts *listenerNodeOptions) {
+	opts.deadLetterStream = o.Stream
+}
+
+// WithDeadLetterStream sets the dead-letter stream for a ListenerNode
+func WithDeadLetterStream(s string) ListenerNodeOption {
+	return deadLetterStreamOption{Stream: s}
 }

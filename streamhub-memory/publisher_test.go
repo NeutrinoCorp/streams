@@ -25,15 +25,13 @@ func TestPublisher_Publish(t *testing.T) {
 	d := streamhub_memory.NewListener(bus)
 	baseCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
 	defer cancel()
-	err = d.ExecuteTask(baseCtx, streamhub.ListenerTask{
+	err = d.ExecuteTask(baseCtx, &streamhub.ListenerNode{
 		Stream: "foo-stream",
 		HandlerFunc: func(ctx context.Context, message streamhub.Message) error {
 			assert.Equal(t, "foo-stream", message.Stream)
 			return nil
 		},
-		Group:         "",
-		Configuration: nil,
-		Timeout:       0,
+		Group: "",
 	})
 	assert.NoError(t, err)
 	err = p.Publish(context.Background(), streamhub.Message{
@@ -61,15 +59,13 @@ func TestPublisher_PublishBatch(t *testing.T) {
 	d := streamhub_memory.NewListener(bus)
 	baseCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
 	defer cancel()
-	err = d.ExecuteTask(baseCtx, streamhub.ListenerTask{
+	err = d.ExecuteTask(baseCtx, &streamhub.ListenerNode{
 		Stream: "foo-stream",
 		HandlerFunc: func(ctx context.Context, message streamhub.Message) error {
 			assert.Equal(t, "foo-stream", message.Stream)
 			return nil
 		},
-		Group:         "",
-		Configuration: nil,
-		Timeout:       0,
+		Group: "",
 	})
 	assert.NoError(t, err)
 	err = p.PublishBatch(context.Background(), streamhub.Message{

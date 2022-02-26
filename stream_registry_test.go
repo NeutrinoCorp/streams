@@ -34,8 +34,9 @@ var streamRegistrySetSuite = []struct {
 			SchemaDefinitionName: "",
 		},
 		Exp: streamhub.StreamMetadata{
-			Stream: "foo-stream",
-			GoType: reflect.TypeOf(fooMessage{}),
+			Stream:               "foo-stream",
+			SchemaDefinitionName: "foo-stream",
+			GoType:               reflect.TypeOf(fooMessage{}),
 		},
 		Err: nil,
 	},

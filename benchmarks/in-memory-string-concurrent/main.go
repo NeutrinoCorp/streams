@@ -65,6 +65,9 @@ func registerListeners(h *streamhub.Hub) {
 func publishMessages(timeFrame *time.Timer, h *streamhub.Hub) {
 	for {
 		go func() {
+			defer func() {
+				recover()
+			}()
 			_ = h.PublishByMessageKey(context.Background(), "ncorp.wallet.tx.registered", transactionRegistered{
 				TxID:   "1",
 				Amount: 99.99,

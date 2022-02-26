@@ -394,7 +394,7 @@ func BenchmarkSerializeKHeaders(b *testing.B) {
 }
 
 var deserializerKHeadersTestSuite = []struct {
-	In  []sarama.RecordHeader
+	In  []*sarama.RecordHeader
 	Out streamhub.Message
 }{
 	{
@@ -402,7 +402,7 @@ var deserializerKHeadersTestSuite = []struct {
 		Out: streamhub.Message{},
 	},
 	{
-		In: []sarama.RecordHeader{
+		In: []*sarama.RecordHeader{
 			{
 				Key:   []byte(headerKeyCloudEventId),
 				Value: []byte("123"),
@@ -413,7 +413,7 @@ var deserializerKHeadersTestSuite = []struct {
 		},
 	},
 	{
-		In: []sarama.RecordHeader{
+		In: []*sarama.RecordHeader{
 			{
 				Key:   []byte(headerKeyCloudEventId),
 				Value: []byte("123"),
@@ -425,7 +425,7 @@ var deserializerKHeadersTestSuite = []struct {
 		},
 	},
 	{
-		In: []sarama.RecordHeader{
+		In: []*sarama.RecordHeader{
 			{
 				Key:   []byte(headerKeyCloudEventId),
 				Value: []byte("123"),
@@ -436,7 +436,7 @@ var deserializerKHeadersTestSuite = []struct {
 		},
 	},
 	{
-		In: []sarama.RecordHeader{
+		In: []*sarama.RecordHeader{
 			{
 				Key:   []byte(headerKeyCloudEventId),
 				Value: []byte("123"),
@@ -452,7 +452,7 @@ var deserializerKHeadersTestSuite = []struct {
 		},
 	},
 	{
-		In: []sarama.RecordHeader{
+		In: []*sarama.RecordHeader{
 			{
 				Key:   []byte(headerKeyCloudEventId),
 				Value: []byte("123"),
@@ -540,7 +540,7 @@ func TestDeserializeKHeaders(t *testing.T) {
 }
 
 func BenchmarkDeserializeKHeaders(b *testing.B) {
-	headers := []sarama.RecordHeader{
+	headers := []*sarama.RecordHeader{
 		{
 			Key:   []byte(headerKeyCloudEventId),
 			Value: []byte("123"),
@@ -593,5 +593,80 @@ func BenchmarkDeserializeKHeaders(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		b.ReportAllocs()
 		_ = deserializeKHeaders(headers)
+	}
+}
+
+var defaultTimestamp = time.Now()
+
+var consumerToProducerMessageTestSuite = []struct {
+	In  *sarama.ConsumerMessage
+	Out *sarama.ProducerMessage
+}{
+	{
+		In:  nil,
+		Out: nil,
+	},
+	{
+		In: &sarama.ConsumerMessage{
+			Headers:        nil,
+			Timestamp:      time.Time{},
+			BlockTimestamp: time.Time{},
+			Key:            nil,
+			Value:          nil,
+			Topic:          "",
+			Partition:      0,
+			Offset:         0,
+		},
+		Out: &sarama.ProducerMessage{
+			Topic:     "",
+			Key:       nil,
+			Value:     nil,
+			Headers:   nil,
+			Metadata:  nil,
+			Offset:    0,
+			Partition: 0,
+			Timestamp: time.Time{},
+		},
+	},
+	{
+		In: &sarama.ConsumerMessage{
+			Headers: []*sarama.RecordHeader{
+				{
+					Key:   []byte("foo"),
+					Value: []byte("bar"),
+				},
+			},
+			Timestamp:      defaultTimestamp,
+			BlockTimestamp: time.Time{},
+			Key:            []byte("abc"),
+			Value:          []byte("foobar"),
+			Topic:          "foo-topic",
+			Partition:      10,
+			Offset:         8,
+		},
+		Out: &sarama.ProducerMessage{
+			Key:       sarama.ByteEncoder("abc"),
+			Value:     sarama.ByteEncoder("foobar"),
+			Topic:     "foo-topic",
+			Partition: 10,
+			Offset:    8,
+			Headers: []sarama.RecordHeader{
+				{
+					Key:   []byte("foo"),
+					Value: []byte("bar"),
+				},
+			},
+			Metadata:  nil,
+			Timestamp: defaultTimestamp,
+		},
+	},
+}
+
+func TestConsumerToProducerMessage(t *testing.T) {
+	for _, tt := range consumerToProducerMessageTestSuite {
+		t.Run("", func(t *testing.T) {
+			out := consumerToProducerMessage(tt.In)
+			assert.EqualValues(t, tt.Out, out)
+		})
 	}
 }

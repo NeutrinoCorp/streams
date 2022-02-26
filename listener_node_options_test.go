@@ -133,3 +133,31 @@ func TestWithMaxHandlerPoolSize(t *testing.T) {
 	hub.ListenByStreamKey("bar", opt)
 	assert.Equal(t, 2, hub.listenerSupervisor.listenerRegistry[2].MaxHandlerPoolSize)
 }
+
+func TestWithHosts(t *testing.T) {
+	hosts := []string{"localhost:123", "localhost:456"}
+	opt := WithHosts(hosts...)
+	assert.Implements(t, (*ListenerNodeOption)(nil), opt)
+
+	hub := NewHub()
+	hub.ListenByStreamKey("foo", opt)
+	assert.Equal(t, hosts, hub.listenerSupervisor.listenerRegistry[0].Hosts)
+}
+
+func TestWithRetryStream(t *testing.T) {
+	opt := WithRetryStream("foo.retry")
+	assert.Implements(t, (*ListenerNodeOption)(nil), opt)
+
+	hub := NewHub()
+	hub.ListenByStreamKey("foo", opt)
+	assert.Equal(t, "foo.retry", hub.listenerSupervisor.listenerRegistry[0].RetryStream)
+}
+
+func TestWithDeadLetterStream(t *testing.T) {
+	opt := WithDeadLetterStream("foo.dlq")
+	assert.Implements(t, (*ListenerNodeOption)(nil), opt)
+
+	hub := NewHub()
+	hub.ListenByStreamKey("foo", opt)
+	assert.Equal(t, "foo.dlq", hub.listenerSupervisor.listenerRegistry[0].DeadLetterStream)
+}

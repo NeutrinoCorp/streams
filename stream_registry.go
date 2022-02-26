@@ -31,6 +31,9 @@ type StreamRegistry map[string]StreamMetadata
 func (r StreamRegistry) Set(message interface{}, metadata StreamMetadata) {
 	msgType := reflect.TypeOf(message)
 	metadata.GoType = msgType
+	if metadata.SchemaDefinitionName == "" {
+		metadata.SchemaDefinitionName = metadata.Stream
+	}
 	r.SetByString(msgType.String(), metadata)
 }
 

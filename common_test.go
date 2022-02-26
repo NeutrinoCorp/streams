@@ -13,7 +13,7 @@ type listenerDriverNoop struct{}
 var _ streamhub.ListenerDriver = listenerDriverNoop{}
 
 // ExecuteTask the no-operation implementation of ListenerDriver
-func (l listenerDriverNoop) ExecuteTask(_ context.Context, _ streamhub.ListenerTask) error {
+func (l listenerDriverNoop) ExecuteTask(_ context.Context, _ *streamhub.ListenerNode) error {
 	return nil
 }
 
@@ -22,7 +22,7 @@ type listenerDriverNoopGoroutine struct{}
 var _ streamhub.ListenerDriver = listenerDriverNoopGoroutine{}
 
 // ExecuteTask the no-operation implementation of ListenerDriver inside a goroutine
-func (l listenerDriverNoopGoroutine) ExecuteTask(_ context.Context, _ streamhub.ListenerTask) error {
+func (l listenerDriverNoopGoroutine) ExecuteTask(_ context.Context, _ *streamhub.ListenerNode) error {
 	go func() {}()
 	return nil
 }

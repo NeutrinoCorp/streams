@@ -117,7 +117,7 @@ func serializeKHeaders(msg streamhub.Message) []sarama.RecordHeader {
 	return headers
 }
 
-func deserializeKHeaders(headers []sarama.RecordHeader) streamhub.Message {
+func deserializeKHeaders(headers []*sarama.RecordHeader) streamhub.Message {
 	msg := streamhub.Message{}
 	for _, h := range headers {
 		switch parser.UnsafeBytesToString(h.Key) {
@@ -149,4 +149,42 @@ func deserializeKHeaders(headers []sarama.RecordHeader) streamhub.Message {
 		}
 	}
 	return msg
+}
+
+func consumerToProducerHeaders(consumerHeaders []*sarama.RecordHeader) []sarama.RecordHeader {
+	if len(consumerHeaders) == 0 {
+		return nil
+	}
+	prodHeaders := make([]sarama.RecordHeader, 0, len(consumerHeaders))
+	for _, h := range consumerHeaders {
+		prodHeaders = append(prodHeaders, sarama.RecordHeader{
+			Key:   h.Key,
+			Value: h.Value,
+		})
+	}
+
+	return prodHeaders
+}
+
+func parseBytesEncoder(data []byte) sarama.Encoder {
+	if data == nil || len(data) == 0 {
+		return nil
+	}
+
+	return sarama.ByteEncoder(data)
+}
+
+func consumerToProducerMessage(consumerMessage *sarama.ConsumerMessage) *sarama.ProducerMessage {
+	if consumerMessage == nil {
+		return nil
+	}
+	return &sarama.ProducerMessage{
+		Topic:     consumerMessage.Topic,
+		Key:       parseBytesEncoder(consumerMessage.Key),
+		Value:     parseBytesEncoder(consumerMessage.Value),
+		Headers:   consumerToProducerHeaders(consumerMessage.Headers),
+		Offset:    consumerMessage.Offset,
+		Partition: consumerMessage.Partition,
+		Timestamp: consumerMessage.Timestamp,
+	}
 }

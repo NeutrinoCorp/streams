@@ -9,7 +9,10 @@ import (
 //
 // Each ListenerNode is independent of other nodes to guarantee resiliency of interleaved processes and avoid cascading failures.
 type ListenerNode struct {
+	Hosts                 []string
 	Stream                string
+	RetryStream           string
+	DeadLetterStream      string
 	HandlerFunc           ListenerFunc
 	Group                 string
 	ProviderConfiguration interface{}
@@ -27,10 +30,9 @@ func (n *ListenerNode) start(ctx context.Context) {
 	if n.ListenerDriver == nil {
 		return
 	}
-	baseTask := newListenerTask(n)
 	for i := 0; i < n.ConcurrencyLevel; i++ {
 		// TODO: Implement logging to log errors
-		_ = n.ListenerDriver.ExecuteTask(ctx, baseTask)
+		_ = n.ListenerDriver.ExecuteTask(ctx, n)
 	}
 	return
 }

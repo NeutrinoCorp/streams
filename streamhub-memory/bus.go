@@ -10,7 +10,7 @@ import (
 type Bus struct {
 	messageBuffer chan streamhub.Message
 	// key: Stream name | value: List of handlers
-	messageHandlers map[string][]streamhub.ListenerTask
+	messageHandlers map[string][]*streamhub.ListenerNode
 
 	startedBus    bool
 	maxGoroutines int
@@ -23,20 +23,20 @@ func NewBus(maxGoroutines int) *Bus {
 	}
 	return &Bus{
 		messageBuffer:   make(chan streamhub.Message),
-		messageHandlers: map[string][]streamhub.ListenerTask{},
+		messageHandlers: map[string][]*streamhub.ListenerNode{},
 		startedBus:      false,
 		maxGoroutines:   maxGoroutines,
 	}
 }
 
-func (b *Bus) registerHandler(task streamhub.ListenerTask) {
-	handlers, ok := b.messageHandlers[task.Stream]
+func (b *Bus) registerHandler(node *streamhub.ListenerNode) {
+	handlers, ok := b.messageHandlers[node.Stream]
 	if !ok {
-		handlers = make([]streamhub.ListenerTask, 0)
+		handlers = make([]*streamhub.ListenerNode, 0)
 	}
 
-	handlers = append(handlers, task)
-	b.messageHandlers[task.Stream] = handlers
+	handlers = append(handlers, node)
+	b.messageHandlers[node.Stream] = handlers
 }
 
 func (b *Bus) publish(_ context.Context, message streamhub.Message) error {
@@ -62,13 +62,13 @@ func (b *Bus) start(ctx context.Context) {
 			select {
 			case sem <- struct{}{}:
 			}
-			for _, t := range b.messageHandlers[msg.Stream] {
-				go func(task streamhub.ListenerTask, message streamhub.Message) {
-					scopedCtx, cancel := context.WithTimeout(ctx, task.Timeout)
+			for _, n := range b.messageHandlers[msg.Stream] {
+				go func(node *streamhub.ListenerNode, message streamhub.Message) {
+					scopedCtx, cancel := context.WithTimeout(ctx, node.RetryTimeout)
 					defer cancel()
 					defer func() { <-sem }()
-					_ = task.HandlerFunc(scopedCtx, message)
-				}(t, msg)
+					_ = node.HandlerFunc(scopedCtx, message)
+				}(n, msg)
 			}
 		}
 		// acquire semaphore

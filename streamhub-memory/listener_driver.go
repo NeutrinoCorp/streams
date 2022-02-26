@@ -19,8 +19,8 @@ func NewListener(b *Bus) *ListenerDriver {
 }
 
 // ExecuteTask starts the stream-listening job using the internal in-memory Bus
-func (l *ListenerDriver) ExecuteTask(ctx context.Context, t streamhub.ListenerTask) error {
-	l.b.registerHandler(t)
+func (l *ListenerDriver) ExecuteTask(ctx context.Context, node *streamhub.ListenerNode) error {
+	l.b.registerHandler(node)
 	l.b.start(ctx)
 	return nil
 }

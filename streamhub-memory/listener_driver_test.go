@@ -17,12 +17,10 @@ func TestListenerDriver_ExecuteTask(t *testing.T) {
 	d := shmemory.NewListener(shmemory.NewBus(0))
 	baseCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
 	defer cancel()
-	err := d.ExecuteTask(baseCtx, streamhub.ListenerTask{
-		Stream:        "",
-		HandlerFunc:   nil,
-		Group:         "",
-		Configuration: nil,
-		Timeout:       0,
+	err := d.ExecuteTask(baseCtx, &streamhub.ListenerNode{
+		Stream:      "",
+		HandlerFunc: nil,
+		Group:       "",
 	})
 	assert.NoError(t, err)
 	// in-memory message bus adds two go routines, one for message buffer subscription and another for graceful shutdown

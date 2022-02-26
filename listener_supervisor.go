@@ -27,7 +27,7 @@ type listenerSupervisor struct {
 func newListenerSupervisor(h *Hub) *listenerSupervisor {
 	return &listenerSupervisor{
 		parentHub:            h,
-		listenerRegistry:     make([]ListenerNode, 0),
+		listenerRegistry:     make([]*ListenerNode, 0),
 		baseListenerNodeOpts: h.ListenerBaseOptions,
 	}
 }
@@ -53,7 +53,10 @@ func (s *listenerSupervisor) forkNode(stream string, opts ...ListenerNodeOption)
 	}
 
 	node := &ListenerNode{
+		Hosts:                 baseOpts.hosts,
 		Stream:                stream,
+		RetryStream:           baseOpts.retryStream,
+		DeadLetterStream:      baseOpts.deadLetterStream,
 		HandlerFunc:           s.getFallbackListenerFunc(baseOpts),
 		Group:                 baseOpts.group,
 		ProviderConfiguration: baseOpts.providerConfiguration,
@@ -65,7 +68,7 @@ func (s *listenerSupervisor) forkNode(stream string, opts ...ListenerNodeOption)
 		MaxHandlerPoolSize:    baseOpts.maxHandlerPoolSize,
 	}
 	node.HandlerFunc = s.attachDefaultBehaviours(node)
-	s.listenerRegistry = append(s.listenerRegistry, *node)
+	s.listenerRegistry = append(s.listenerRegistry, node)
 }
 
 func (s *listenerSupervisor) getFallbackListenerFunc(baseOpts listenerNodeOptions) ListenerFunc {

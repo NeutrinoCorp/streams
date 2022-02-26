@@ -1,7 +1,6 @@
 package streamhub_sarama
 
 import (
-	"context"
 	"time"
 
 	"github.com/Shopify/sarama"
@@ -63,11 +62,9 @@ func newKKey(s PublisherStrategy, msg streamhub.Message) sarama.Encoder {
 
 // populateProducerMessage constructs a Kafka message based on either the structured or binary content modes.
 //
-// It will choose structured mode if a marshaler is not nil. If not, binary mode will be used.
-//
-// Moreover, binary mode means data will be stored within Kafka message's headers in binary format while structured mode
-// means a whole streamhub.Message will be encoded using the given marshaler, so it will be stored within the Kafka message
-// value field.
+// If marshaler is not nil, the function will use `structured mode` marshalling (encoding data straight to the
+// Apache Kafka message `value` field).
+// Otherwise, by default it will use binary mode (encoding data to Apache Kafka message headers).
 //
 // more info here: https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/bindings/kafka-protocol-binding.md
 func populateProducerMessage(marshaler streamhub.Marshaler, message streamhub.Message,
@@ -133,44 +130,4 @@ func newProducerMessageBatch(marshaler streamhub.Marshaler, strategy PublisherSt
 		transportMsgsBuffer = append(transportMsgsBuffer, transportMsg)
 	}
 	return transportMsgsBuffer, nil
-}
-
-// SyncPublisher is the blocking-IO implementation for producing messages into an Apache Kafka cluster.
-type SyncPublisher struct {
-	Producer  sarama.SyncProducer
-	Strategy  PublisherStrategy
-	Marshaler streamhub.Marshaler
-}
-
-var _ streamhub.Publisher = &SyncPublisher{}
-
-// NewSyncPublisher allocates a new SyncPublisher instance ready to be used.
-//
-// If no PublisherStrategy was found, PublisherRoundRobinStrategy will be used in place
-func NewSyncPublisher(producer sarama.SyncProducer, marshaler streamhub.Marshaler, strategy PublisherStrategy) *SyncPublisher {
-	strategy = getDefaultProducerStrategy(strategy)
-	return &SyncPublisher{
-		Producer:  producer,
-		Strategy:  strategy,
-		Marshaler: marshaler,
-	}
-}
-
-// Publish produces a message into an Apache Kafka cluster
-func (p *SyncPublisher) Publish(_ context.Context, message streamhub.Message) error {
-	transportMsg, err := newProducerMessage(p.Marshaler, p.Strategy, message)
-	if err != nil {
-		return err
-	}
-	_, _, err = p.Producer.SendMessage(transportMsg)
-	return err
-}
-
-// PublishBatch produces a set of messages into an Apache Kafka cluster
-func (p *SyncPublisher) PublishBatch(_ context.Context, messages ...streamhub.Message) error {
-	transportMsgsBuffer, err := newProducerMessageBatch(p.Marshaler, p.Strategy, messages...)
-	if err != nil {
-		return err
-	}
-	return p.Producer.SendMessages(transportMsgsBuffer)
 }
