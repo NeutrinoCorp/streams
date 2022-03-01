@@ -14,7 +14,7 @@ func NewSaramaConfig(hostname string) *sarama.Config {
 	cfg.Producer.Return.Successes = true
 	cfg.Producer.Return.Errors = true
 	cfg.Consumer.Return.Errors = true
-	cfg.Consumer.Offsets.AutoCommit.Enable = false
+	cfg.Consumer.Offsets.AutoCommit.Enable = true
 	cfg.Consumer.Offsets.Initial = sarama.OffsetOldest
 	cfg.Consumer.Group.Rebalance.Strategy = sarama.BalanceStrategyRange
 	return cfg

@@ -116,7 +116,7 @@ func (g GroupListenerDriver) ExecuteTask(ctx context.Context, node *streamhub.Li
 	}
 	go func() {
 		for {
-			err = consumer.Consume(ctx, []string{node.Stream}, &defaultConsumerGroupHandler{
+			err = consumer.Consume(ctx, []string{node.Stream}, defaultConsumerGroupHandler{
 				marshaler: g.marshaler,
 				node:      node,
 				producer:  g.producer,
