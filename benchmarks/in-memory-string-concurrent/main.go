@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/neutrinocorp/streamhub"
-	streamhub_memory "github.com/neutrinocorp/streamhub/streamhub-memory"
+	shmemory "github.com/neutrinocorp/streamhub/streamhub-memory"
 )
 
 type transactionRegistered struct {
@@ -20,13 +20,24 @@ var totalProcessedMessages = uint64(0)
 var totalGoroutines = uint64(0)
 
 func main() {
+	memStats := &runtime.MemStats{}
+	defer func() {
+		runtime.ReadMemStats(memStats)
+		log.Printf("total memory allocation: %d", memStats.TotalAlloc)
+		log.Printf("memory allocation: %d", memStats.Mallocs)
+		log.Printf("heap allocation: %d", memStats.HeapAlloc)
+		log.Printf("heap allocation in use: %d", memStats.HeapInuse)
+		log.Printf("heap allocation freed: %d", memStats.Frees)
+		log.Printf("heap allocation released: %d", memStats.HeapReleased)
+	}()
+
 	baseCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	b := streamhub_memory.NewBus(1024)
+	b := shmemory.NewBus(1024)
 	hub := streamhub.NewHub(
-		streamhub.WithPublisher(streamhub_memory.NewPublisher(b)),
-		streamhub.WithListenerDriver(streamhub_memory.NewListener(b)))
+		streamhub.WithPublisher(shmemory.NewPublisher(b)),
+		streamhub.WithListenerDriver(shmemory.NewListener(b)))
 
 	registerStream(hub)
 	registerListeners(hub)
