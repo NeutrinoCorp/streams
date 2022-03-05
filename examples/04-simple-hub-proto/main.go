@@ -32,6 +32,7 @@ func main() {
 			msg, ok := message.DecodedData.(*examplepb.Person)
 			if ok {
 				log.Printf("%+v", msg)
+				log.Print(message.Subject)
 			}
 			return nil
 		}))

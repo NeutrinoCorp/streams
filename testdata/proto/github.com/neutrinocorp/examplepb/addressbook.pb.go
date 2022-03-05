@@ -9,11 +9,13 @@
 package examplepb
 
 import (
+	reflect "reflect"
+	"strconv"
+	sync "sync"
+
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
-	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -82,6 +84,10 @@ type Person struct {
 	Email       string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
 	Phones      []*Person_PhoneNumber  `protobuf:"bytes,4,rep,name=phones,proto3" json:"phones,omitempty"`
 	LastUpdated *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
+}
+
+func (p *Person) GetSubject() string {
+	return strconv.Itoa(int(p.Id))
 }
 
 func (x *Person) Reset() {

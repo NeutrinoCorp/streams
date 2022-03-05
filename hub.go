@@ -210,7 +210,7 @@ func (h *Hub) buildTransportMessage(ctx context.Context, metadata StreamMetadata
 
 	event, ok := message.(Event)
 	if ok {
-		transportMsg.Subject = event.Subject()
+		transportMsg.Subject = event.GetSubject()
 	}
 
 	return transportMsg, nil

@@ -97,7 +97,7 @@ type fooEvent struct {
 
 var _ streamhub.Event = fooEvent{}
 
-func (f fooEvent) Subject() string {
+func (f fooEvent) GetSubject() string {
 	return f.Bar
 }
 
