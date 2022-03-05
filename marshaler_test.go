@@ -4,6 +4,11 @@ import (
 	"errors"
 	"hash"
 	"testing"
+	"time"
+
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/neutrinocorp/streamhub/testdata/proto/github.com/neutrinocorp/examplepb"
 
 	"github.com/neutrinocorp/streamhub"
 	"github.com/stretchr/testify/assert"
@@ -208,4 +213,64 @@ func BenchmarkAvroMarshaler_Unmarshal(b *testing.B) {
 		b.ReportAllocs()
 		_ = m.Unmarshal(def, data, ref)
 	}
+}
+
+func TestProtocolBuffersMarshaler_ContentType(t *testing.T) {
+	assert.Equal(t, "application/octet-stream", streamhub.ProtocolBuffersMarshaler{}.ContentType())
+}
+
+func TestProtocolBuffersMarshaler_Marshal(t *testing.T) {
+	var m streamhub.Marshaler
+	m = streamhub.ProtocolBuffersMarshaler{}
+	data, err := m.Marshal("", fooMessage{})
+	assert.Error(t, err)
+	assert.Nil(t, data)
+
+	// not pointer, will fail
+	data, err = m.Marshal("", examplepb.Person{})
+	assert.ErrorIs(t, err, streamhub.ErrInvalidProtocolBufferFormat)
+	assert.Nil(t, data)
+
+	data, err = m.Marshal("", &examplepb.Person{})
+	assert.NoError(t, err)
+	assert.NotNil(t, data)
+}
+
+func TestProtocolBuffersMarshaler_Unmarshal(t *testing.T) {
+	var m streamhub.Marshaler
+	m = streamhub.ProtocolBuffersMarshaler{}
+	basePerson := &examplepb.Person{
+		Name:  "Foo",
+		Id:    123,
+		Email: "foo@example.com",
+		Phones: []*examplepb.Person_PhoneNumber{
+			{
+				Number: "017865642",
+				Type:   2,
+			},
+		},
+		LastUpdated: &timestamppb.Timestamp{
+			Seconds: time.Now().Unix(),
+			Nanos:   int32(time.Now().UnixMilli()),
+		},
+	}
+
+	data, err := m.Marshal("", basePerson)
+	assert.NoError(t, err)
+	assert.NotNil(t, data)
+
+	decodedPerson := &examplepb.Person{}
+
+	err = m.Unmarshal("", data, *decodedPerson)
+	assert.ErrorIs(t, err, streamhub.ErrInvalidProtocolBufferFormat)
+
+	err = m.Unmarshal("", data, decodedPerson)
+	assert.NoError(t, err)
+	assert.Equal(t, basePerson.Id, decodedPerson.Id)
+	assert.Equal(t, basePerson.Name, decodedPerson.Name)
+	assert.Equal(t, basePerson.Email, decodedPerson.Email)
+	assert.Equal(t, basePerson.LastUpdated.String(), decodedPerson.LastUpdated.String())
+	assert.Equal(t, len(basePerson.Phones), len(decodedPerson.Phones))
+	assert.Equal(t, basePerson.Phones[0].Type, decodedPerson.Phones[0].Type)
+	assert.Equal(t, basePerson.Phones[0].Number, decodedPerson.Phones[0].Number)
 }

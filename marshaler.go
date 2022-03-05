@@ -8,6 +8,7 @@ import (
 	"github.com/hamba/avro"
 	lru "github.com/hashicorp/golang-lru"
 	jsoniter "github.com/json-iterator/go"
+	"google.golang.org/protobuf/proto"
 )
 
 // Marshaler handles data transformation between primitives and specific codecs/formats (e.g. JSON, Apache Avro).
@@ -158,4 +159,41 @@ func (a AvroMarshaler) Unmarshal(schemaDef string, data []byte, ref interface{})
 // ContentType retrieves the encoding/decoding Apache Avro format using RFC 2046 standard (application/avro).
 func (a AvroMarshaler) ContentType() string {
 	return "application/avro"
+}
+
+var (
+	// ErrInvalidProtocolBufferFormat the given data is not a valid protocol buffer message
+	ErrInvalidProtocolBufferFormat = errors.New("streamhub: Invalid protocol buffer data")
+)
+
+// ProtocolBuffersMarshaler handles data transformation between primitives and Google Protocol Buffers format
+type ProtocolBuffersMarshaler struct{}
+
+var _ Marshaler = ProtocolBuffersMarshaler{}
+
+// Marshal transforms a complex data type into a primitive binary array for data transportation using Google Protocol Buffers format
+func (p ProtocolBuffersMarshaler) Marshal(_ string, data interface{}) ([]byte, error) {
+	messageProto, ok := data.(proto.Message)
+	if !ok {
+		return nil, ErrInvalidProtocolBufferFormat
+	}
+
+	return proto.Marshal(messageProto)
+}
+
+// Unmarshal transforms a primitive binary array to a complex data type for data processing using Google Protocol Buffers format
+func (p ProtocolBuffersMarshaler) Unmarshal(_ string, data []byte, ref interface{}) error {
+	messageProto, ok := ref.(proto.Message)
+	if !ok {
+		return ErrInvalidProtocolBufferFormat
+	}
+	return proto.Unmarshal(data, messageProto)
+}
+
+// ContentType retrieves the encoding/decoding Google Protocol Buffers format using the latest conventions.
+//
+// More information here: https://github.com/google/protorpc/commit/eb03145a6a7c72ae6cc43867d9635a5b8d8c4545
+func (p ProtocolBuffersMarshaler) ContentType() string {
+	// took reference from: https://github.com/google/protorpc/commit/eb03145a6a7c72ae6cc43867d9635a5b8d8c4545
+	return "application/octet-stream"
 }

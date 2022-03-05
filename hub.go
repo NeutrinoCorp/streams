@@ -36,7 +36,7 @@ func NewHub(opts ...HubOption) *Hub {
 		IDFactory:           baseOpts.idFactory,
 		SchemaRegistry:      baseOpts.schemaRegistry,
 		ListenerDriver:      baseOpts.driver,
-		ListenerBehaviours:  append(listenerBaseBehaviours, baseOpts.listenerBehaviours...),
+		ListenerBehaviours:  append(ListenerBaseBehaviours, baseOpts.listenerBehaviours...),
 		ListenerBaseOptions: baseOpts.listenerBaseOpts,
 	}
 	h.listenerSupervisor = newListenerSupervisor(h)
@@ -55,6 +55,9 @@ func newHubDefaults() hubOptions {
 }
 
 // RegisterStream creates a relation between a stream message type and metadata.
+//
+// If registering a Google's Protocol Buffer message, DO NOT use a pointer as message schema
+// to avoid marshaling problems
 func (h *Hub) RegisterStream(message interface{}, metadata StreamMetadata) {
 	h.StreamRegistry.Set(message, metadata)
 }
@@ -65,6 +68,9 @@ func (h *Hub) RegisterStreamByString(messageType string, metadata StreamMetadata
 }
 
 // Listen registers a new stream-listening background job.
+//
+// If listening to a Google's Protocol Buffer message, DO NOT use a pointer as message schema
+// to avoid marshaling problems
 func (h *Hub) Listen(message interface{}, opts ...ListenerNodeOption) error {
 	metadata, err := h.StreamRegistry.Get(message)
 	if err != nil {
