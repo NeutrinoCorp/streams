@@ -1,10 +1,10 @@
 package streamhub_test
 
 import (
-	"reflect"
 	"strconv"
 	"testing"
 
+	"github.com/modern-go/reflect2"
 	"github.com/neutrinocorp/streamhub"
 	"github.com/stretchr/testify/assert"
 )
@@ -23,7 +23,7 @@ var streamRegistrySetSuite = []struct {
 		InMsg:  fooMessage{},
 		InMeta: streamhub.StreamMetadata{},
 		Exp: streamhub.StreamMetadata{
-			GoType: reflect.TypeOf(fooMessage{}),
+			GoType: reflect2.TypeOf(fooMessage{}),
 		},
 		Err: nil,
 	},
@@ -35,7 +35,7 @@ var streamRegistrySetSuite = []struct {
 		},
 		Exp: streamhub.StreamMetadata{
 			Stream: "foo-stream",
-			GoType: reflect.TypeOf(fooMessage{}),
+			GoType: reflect2.TypeOf(fooMessage{}),
 		},
 		Err: nil,
 	},
@@ -147,7 +147,7 @@ var streamRegistryGetByStreamSuite = []struct {
 		Err: streamhub.ErrMissingStream,
 	},
 	{
-		In:  reflect.TypeOf(fooMessage{}).String(),
+		In:  reflect2.TypeOf(fooMessage{}).String(),
 		Err: streamhub.ErrMissingStream,
 	},
 	{

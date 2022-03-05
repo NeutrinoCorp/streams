@@ -3,9 +3,10 @@ package streamhub
 import (
 	"context"
 	"errors"
-	"reflect"
 	"testing"
 	"time"
+
+	"github.com/modern-go/reflect2"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/stretchr/testify/assert"
@@ -35,10 +36,15 @@ type fooMessage struct {
 
 func TestListenerNodeHandlerBehaviour_Unmarshal(t *testing.T) {
 	var h ListenerFunc = func(ctx context.Context, message Message) error {
-		_, ok := message.DecodedData.(*fooMessage)
-		assert.False(t, ok)
-		dataValid, ok := message.DecodedData.(fooMessage)
+		// streamhub now passes decoded data as pointer
+		// This is caused by the usage of the reflect2 package and the new protobuf implementation.
+		//
+		// Protobuf messages are complex structures with inner data components such as sync.Mutex which require a
+		// pointer struct to avoid data copies
+		dataValid, ok := message.DecodedData.(*fooMessage)
 		assert.True(t, ok)
+		_, ok = message.DecodedData.(fooMessage)
+		assert.False(t, ok)
 		assert.Equal(t, "foo", dataValid.Hello)
 		return nil
 	}
@@ -61,7 +67,7 @@ func TestListenerNodeHandlerBehaviour_Unmarshal(t *testing.T) {
 	hub.StreamRegistry.SetByString("foo", StreamMetadata{
 		Stream:               "foo-stream",
 		SchemaDefinitionName: "foo",
-		GoType:               reflect.TypeOf(fooMessage{}),
+		GoType:               reflect2.TypeOf(fooMessage{}),
 	})
 	fooJSON, _ := jsoniter.Marshal(fooMessage{
 		Hello: "foo",
@@ -94,7 +100,7 @@ func BenchmarkListenerNodeHandlerBehaviour_Unmarshal(b *testing.B) {
 	hub.StreamRegistry.SetByString("foo", StreamMetadata{
 		Stream:               "foo-stream",
 		SchemaDefinitionName: "foo",
-		GoType:               reflect.TypeOf(fooMessage{}),
+		GoType:               reflect2.TypeOf(fooMessage{}),
 	})
 
 	baseCtx := context.Background()

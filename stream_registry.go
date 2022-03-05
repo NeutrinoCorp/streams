@@ -2,7 +2,9 @@ package streamhub
 
 import (
 	"errors"
-	"reflect"
+	"strings"
+
+	"github.com/modern-go/reflect2"
 )
 
 // ErrMissingStream the requested stream was not found in the StreamRegistry
@@ -13,7 +15,7 @@ type StreamMetadata struct {
 	Stream               string
 	SchemaDefinitionName string
 	SchemaVersion        int
-	GoType               reflect.Type
+	GoType               reflect2.Type
 }
 
 // StreamRegistry is an in-memory storage of streams metadata used by Hub and any external agent to set and
@@ -29,9 +31,9 @@ type StreamRegistry map[string]StreamMetadata
 
 // Set creates a relation between a stream message type and metadata.
 func (r StreamRegistry) Set(message interface{}, metadata StreamMetadata) {
-	msgType := reflect.TypeOf(message)
+	msgType := reflect2.TypeOf(message)
 	metadata.GoType = msgType
-	r.SetByString(msgType.String(), metadata)
+	r.SetByString(strings.Trim(msgType.String(), "*"), metadata)
 }
 
 // SetByString creates a relation between a string key and metadata.
@@ -41,7 +43,7 @@ func (r StreamRegistry) SetByString(key string, metadata StreamMetadata) {
 
 // Get retrieves a stream message metadata from a stream message type.
 func (r StreamRegistry) Get(message interface{}) (StreamMetadata, error) {
-	msgType := reflect.TypeOf(message).String()
+	msgType := strings.Trim(reflect2.TypeOf(message).String(), "*")
 	return r.GetByString(msgType)
 }
 

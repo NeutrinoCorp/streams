@@ -2,7 +2,6 @@ package streamhub
 
 import (
 	"context"
-	"reflect"
 
 	"github.com/cenkalti/backoff/v4"
 )
@@ -32,9 +31,20 @@ import (
 // *Manual specification on configuration required
 type ListenerBehaviour func(node *ListenerNode, hub *Hub, next ListenerFunc) ListenerFunc
 
-// will execute with desc order
-var listenerBaseBehaviours = []ListenerBehaviour{
+// ListenerBaseBehaviours default ListenerBehaviours
+//
+// Behaviours will be executed in descending order
+var ListenerBaseBehaviours = []ListenerBehaviour{
 	unmarshalListenerBehaviour,
+	injectGroupListenerBehaviour,
+	injectTxIDsListenerBehaviour,
+	retryListenerBehaviour,
+}
+
+// ListenerBaseBehavioursNoUnmarshal default ListenerBehaviours without unmarshaling
+//
+// Behaviours will be executed in descending order
+var ListenerBaseBehavioursNoUnmarshal = []ListenerBehaviour{
 	injectGroupListenerBehaviour,
 	injectTxIDsListenerBehaviour,
 	retryListenerBehaviour,
@@ -67,11 +77,11 @@ var unmarshalListenerBehaviour ListenerBehaviour = func(_ *ListenerNode, h *Hub,
 			}
 		}
 		if metadata.GoType != nil {
-			decodedData := reflect.New(metadata.GoType)
-			if err = h.Marshaler.Unmarshal(schemaDef, message.Data, decodedData.Interface()); err != nil {
+			decodedData := metadata.GoType.New()
+			if err = h.Marshaler.Unmarshal(schemaDef, message.Data, decodedData); err != nil {
 				return err
 			}
-			message.DecodedData = decodedData.Elem().Interface()
+			message.DecodedData = decodedData
 		}
 		return next(ctx, message)
 	}
