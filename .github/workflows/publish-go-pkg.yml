@@ -24,4 +24,4 @@ jobs:
       
       # Runs a single command using the runners shell
       - name: Force Go package publishing
-        run: "${{GITHUB_WORKSPACE}}/force-goproxy-publish.sh -v ${{github.ref_name}}"
+        run: "${{github.workspace}}/force-goproxy-publish.sh -v ${{github.ref_name}}"
