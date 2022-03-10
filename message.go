@@ -74,7 +74,7 @@ func NewMessage(args NewMessageArgs) Message {
 
 func generateMessageType(source, stream, version string) string {
 	var buff strings.Builder
-	if source != "" {
+	if source != "" && !strings.HasPrefix(stream, source) {
 		buff.WriteString(source)
 		buff.WriteString(".")
 	}

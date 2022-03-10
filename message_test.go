@@ -145,6 +145,32 @@ var newMessageSuite = []struct {
 			Subject:           "foo-sub",
 		},
 	},
+	{
+		In: streamhub.NewMessageArgs{
+			SchemaVersion:        4,
+			Data:                 []byte("foo"),
+			ID:                   "123",
+			Source:               "com.streamhub",
+			Stream:               "com.streamhub.foo-stream",
+			SchemaDefinitionName: "foo_stream",
+			ContentType:          "application/json",
+			GroupName:            "foo-group",
+			Subject:              "foo-sub",
+		},
+		Exp: streamhub.Message{
+			ID:                "123",
+			Stream:            "com.streamhub.foo-stream",
+			Source:            "com.streamhub",
+			SpecVersion:       streamhub.CloudEventsSpecVersion,
+			Type:              "com.streamhub.foo-stream.v4",
+			Data:              []byte("foo"),
+			DataContentType:   "application/json",
+			DataSchema:        "foo_stream",
+			DataSchemaVersion: 4,
+			GroupName:         "foo-group",
+			Subject:           "foo-sub",
+		},
+	},
 }
 
 func TestNewMessage(t *testing.T) {
@@ -177,7 +203,7 @@ func BenchmarkNewMessage(b *testing.B) {
 			SchemaVersion:        9,
 			Data:                 data,
 			ID:                   "1",
-			Source:               "",
+			Source:               "com.streamhub",
 			Stream:               "bar-stream",
 			SchemaDefinitionName: "",
 			ContentType:          "",
