@@ -1,7 +1,7 @@
 package streamhub
 
 // Event is an abstract message unit used by streamhub-based systems to publish messages with a `subject` populated field
-// of a Message.
+// of a Message
 type Event interface {
 	// GetSubject This describes the subject of the event in the context of the event producer (identified by source).
 	// In publish-subscribe scenarios, a subscriber will typically subscribe to events emitted by a source, but the
