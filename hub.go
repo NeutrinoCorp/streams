@@ -154,7 +154,7 @@ type PublishByMessageKeyBatchItems map[string]interface{}
 func (h *Hub) PublishByMessageKeyBatch(ctx context.Context, items PublishByMessageKeyBatchItems) error {
 	var (
 		metadata               StreamMetadata
-		transportMessageBuffer = make([]Message, len(items))
+		transportMessageBuffer = make([]Message, 0, len(items))
 		transportMessage       Message
 		err                    error
 	)
