@@ -111,7 +111,7 @@ func (h *Hub) Publish(ctx context.Context, message interface{}) error {
 func (h *Hub) PublishBatch(ctx context.Context, messages ...interface{}) error {
 	var (
 		metadata               StreamMetadata
-		transportMessageBuffer = make([]Message, len(messages))
+		transportMessageBuffer = make([]Message, 0, len(messages))
 		transportMessage       Message
 		err                    error
 	)
