@@ -18,7 +18,7 @@ type studentSignedUp struct {
 func main() {
 	inMemBus := shmemory.NewBus(0)
 	hub := streamhub.NewHub(
-		streamhub.WithPublisher(shmemory.NewPublisher(inMemBus)),
+		streamhub.WithWriter(shmemory.NewWriter(inMemBus)),
 		streamhub.WithListenerDriver(shmemory.NewListener(inMemBus)))
 
 	hub.RegisterStream(studentSignedUp{}, streamhub.StreamMetadata{
@@ -48,7 +48,7 @@ func main() {
 	defer cancel()
 	hub.Start(ctx)
 
-	err := hub.Publish(context.Background(), studentSignedUp{
+	err := hub.Write(context.Background(), studentSignedUp{
 		StudentID:  "2",
 		SignedUpAt: time.Now().UTC(),
 	})

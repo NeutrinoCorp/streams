@@ -39,7 +39,7 @@ func (b *Bus) registerHandler(task streamhub.ListenerTask) {
 	b.messageHandlers[task.Stream] = handlers
 }
 
-func (b *Bus) publish(_ context.Context, message streamhub.Message) error {
+func (b *Bus) write(_ context.Context, message streamhub.Message) error {
 	if !b.startedBus {
 		return ErrBusNotStarted
 	}

@@ -16,13 +16,13 @@ func TestWithInstanceName(t *testing.T) {
 	assert.Equal(t, "org.neutrino", hub.InstanceName)
 }
 
-func TestWithPublisher(t *testing.T) {
+func TestWithWriter(t *testing.T) {
 	hub := streamhub.NewHub()
-	assert.IsType(t, streamhub.NoopPublisher, hub.Publisher)
+	assert.IsType(t, streamhub.NoopWriter, hub.Writer)
 
 	hub = streamhub.NewHub(
-		streamhub.WithPublisher(streamhub.NoopPublisher))
-	assert.IsType(t, streamhub.NoopPublisher, hub.Publisher)
+		streamhub.WithWriter(streamhub.NoopWriter))
+	assert.IsType(t, streamhub.NoopWriter, hub.Writer)
 }
 
 func TestWithMarshaler(t *testing.T) {

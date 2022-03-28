@@ -11,7 +11,7 @@ var DefaultHubInstanceName = "com.streamhub"
 type Hub struct {
 	InstanceName        string
 	StreamRegistry      StreamRegistry
-	Publisher           Publisher
+	Writer              Writer
 	Marshaler           Marshaler
 	IDFactory           IDFactoryFunc
 	SchemaRegistry      SchemaRegistry
@@ -32,7 +32,7 @@ func NewHub(opts ...HubOption) *Hub {
 		StreamRegistry:      StreamRegistry{},
 		InstanceName:        baseOpts.instanceName,
 		Marshaler:           baseOpts.marshaler,
-		Publisher:           baseOpts.publisher,
+		Writer:              baseOpts.writer,
 		IDFactory:           baseOpts.idFactory,
 		SchemaRegistry:      baseOpts.schemaRegistry,
 		ListenerDriver:      baseOpts.driver,
@@ -47,7 +47,7 @@ func NewHub(opts ...HubOption) *Hub {
 func newHubDefaults() hubOptions {
 	return hubOptions{
 		instanceName:     DefaultHubInstanceName,
-		publisher:        NoopPublisher,
+		writer:           NoopWriter,
 		marshaler:        JSONMarshaler{},
 		idFactory:        UuidIdFactory,
 		listenerBaseOpts: make([]ListenerNodeOption, 0),
@@ -90,25 +90,25 @@ func (h *Hub) Start(ctx context.Context) {
 	h.listenerSupervisor.startNodes(ctx)
 }
 
-// Publish inserts a message into a stream assigned to the message in the StreamRegistry in order to propagate the
+// Write inserts a message into a stream assigned to the message in the StreamRegistry in order to propagate the
 // data to a set of subscribed systems for further processing.
 //
 // Uses given context to inject correlation and causation IDs.
-func (h *Hub) Publish(ctx context.Context, message interface{}) error {
+func (h *Hub) Write(ctx context.Context, message interface{}) error {
 	metadata, err := h.StreamRegistry.Get(message)
 	if err != nil {
 		return err
 	}
-	return h.publishMessage(ctx, metadata, message)
+	return h.writeMessage(ctx, metadata, message)
 }
 
-// PublishBatch inserts a set of messages into a stream assigned on the StreamRegistry in order to propagate the
+// WriteBatch inserts a set of messages into a stream assigned on the StreamRegistry in order to propagate the
 // data to a set of subscribed systems for further processing.
 //
 // Uses given context to inject correlation and causation IDs.
 //
 // If an item from the batch fails, other items will fail too
-func (h *Hub) PublishBatch(ctx context.Context, messages ...interface{}) error {
+func (h *Hub) WriteBatch(ctx context.Context, messages ...interface{}) error {
 	var (
 		metadata               StreamMetadata
 		transportMessageBuffer = make([]Message, 0, len(messages))
@@ -127,31 +127,31 @@ func (h *Hub) PublishBatch(ctx context.Context, messages ...interface{}) error {
 		transportMessageBuffer = append(transportMessageBuffer, transportMessage)
 	}
 
-	return h.PublishRawMessageBatch(ctx, transportMessageBuffer...)
+	return h.WriteRawMessageBatch(ctx, transportMessageBuffer...)
 }
 
-// PublishByMessageKey inserts a message into a stream using the custom message key from StreamRegistry in order to
+// WriteByMessageKey inserts a message into a stream using the custom message key from StreamRegistry in order to
 // propagate the data to a set of subscribed systems for further processing.
 //
 // Uses given context to inject correlation and causation IDs.
-func (h *Hub) PublishByMessageKey(ctx context.Context, messageKey string, message interface{}) error {
+func (h *Hub) WriteByMessageKey(ctx context.Context, messageKey string, message interface{}) error {
 	metadata, err := h.StreamRegistry.GetByString(messageKey)
 	if err != nil {
 		return err
 	}
-	return h.publishMessage(ctx, metadata, message)
+	return h.writeMessage(ctx, metadata, message)
 }
 
-// PublishByMessageKeyBatchItems items to be published as batch on the Hub.PublishByMessageKeyBatch() function
-type PublishByMessageKeyBatchItems map[string]interface{}
+// WriteByMessageKeyBatchItems items to be writeed as batch on the Hub.WriteByMessageKeyBatch() function
+type WriteByMessageKeyBatchItems map[string]interface{}
 
-// PublishByMessageKeyBatch inserts a set of messages into a stream using the custom message key from StreamRegistry in order to
+// WriteByMessageKeyBatch inserts a set of messages into a stream using the custom message key from StreamRegistry in order to
 // propagate the data to a set of subscribed systems for further processing.
 //
 // Uses given context to inject correlation and causation IDs.
 //
 // If an item from the batch fails, other items will fail too
-func (h *Hub) PublishByMessageKeyBatch(ctx context.Context, items PublishByMessageKeyBatchItems) error {
+func (h *Hub) WriteByMessageKeyBatch(ctx context.Context, items WriteByMessageKeyBatchItems) error {
 	var (
 		metadata               StreamMetadata
 		transportMessageBuffer = make([]Message, 0, len(items))
@@ -170,11 +170,11 @@ func (h *Hub) PublishByMessageKeyBatch(ctx context.Context, items PublishByMessa
 		transportMessageBuffer = append(transportMessageBuffer, transportMessage)
 	}
 
-	return h.PublishRawMessageBatch(ctx, transportMessageBuffer...)
+	return h.WriteRawMessageBatch(ctx, transportMessageBuffer...)
 }
 
 // transforms a primitive message into a CloudEvent message ready for transportation. Therefore, executes a
-// message publishing job.
+// message writeing job.
 func (h *Hub) buildTransportMessage(ctx context.Context, metadata StreamMetadata, message interface{}) (Message, error) {
 	schemaDef := ""
 	var err error
@@ -217,35 +217,35 @@ func (h *Hub) buildTransportMessage(ctx context.Context, metadata StreamMetadata
 }
 
 // pushes a single message into a stream using cloud events marshaling
-func (h *Hub) publishMessage(ctx context.Context, metadata StreamMetadata, message interface{}) error {
+func (h *Hub) writeMessage(ctx context.Context, metadata StreamMetadata, message interface{}) error {
 	transportMsg, err := h.buildTransportMessage(ctx, metadata, message)
 	if err != nil {
 		return err
 	}
-	return h.PublishRawMessage(ctx, transportMsg)
+	return h.WriteRawMessage(ctx, transportMsg)
 }
 
-// PublishRawMessage inserts a raw transport message into a stream in order to propagate the data to a set
+// WriteRawMessage inserts a raw transport message into a stream in order to propagate the data to a set
 // of subscribed systems for further processing.
 //
 // Uses given context to inject correlation and causation IDs.
-func (h *Hub) PublishRawMessage(ctx context.Context, message Message) error {
-	if h.Publisher == nil {
-		return ErrMissingPublisherDriver
+func (h *Hub) WriteRawMessage(ctx context.Context, message Message) error {
+	if h.Writer == nil {
+		return ErrMissingWriterDriver
 	}
-	return h.Publisher.Publish(ctx, message)
+	return h.Writer.Write(ctx, message)
 }
 
-// PublishRawMessageBatch inserts a set of raw transport message into a stream in order to propagate the data to a set
+// WriteRawMessageBatch inserts a set of raw transport message into a stream in order to propagate the data to a set
 // of subscribed systems for further processing.
 //
 // Uses given context to inject correlation and causation IDs.
 //
-// The whole batch will be passed to the underlying Publisher driver implementation as every driver has its own way to
+// The whole batch will be passed to the underlying Writer driver implementation as every driver has its own way to
 // deal with batches
-func (h *Hub) PublishRawMessageBatch(ctx context.Context, messages ...Message) error {
-	if h.Publisher == nil {
-		return ErrMissingPublisherDriver
+func (h *Hub) WriteRawMessageBatch(ctx context.Context, messages ...Message) error {
+	if h.Writer == nil {
+		return ErrMissingWriterDriver
 	}
-	return h.Publisher.PublishBatch(ctx, messages...)
+	return h.Writer.WriteBatch(ctx, messages...)
 }

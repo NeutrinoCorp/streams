@@ -45,7 +45,7 @@ func main() {
 	hub := streamhub.NewHub(
 		streamhub.WithIDFactory(streamhub.RandInt64Factory),
 		streamhub.WithListenerBehaviours(loggingListener),
-		streamhub.WithPublisher(shmemory.NewPublisher(inMemBus)),
+		streamhub.WithWriter(shmemory.NewWriter(inMemBus)),
 		streamhub.WithListenerDriver(shmemory.NewListener(inMemBus)))
 
 	hub.RegisterStream(studentSignedUp{}, streamhub.StreamMetadata{
@@ -72,7 +72,7 @@ func main() {
 			if !ok {
 				log.Print("failed to cast reflection-message")
 			}
-			return hub.Publish(ctx, studentLoggedIn{
+			return hub.Write(ctx, studentLoggedIn{
 				StudentID:  data.StudentID,
 				Username:   "aruiz",
 				LoggedInAt: time.Now().UTC(),
@@ -87,7 +87,7 @@ func main() {
 				log.Print("failed to cast logged in reflection-message")
 			}
 			log.Printf("message decoded at reflection-based: %+v", data)
-			return hub.Publish(ctx, aggregateMetricOnStudent{
+			return hub.Write(ctx, aggregateMetricOnStudent{
 				Gauge: rand.Int(),
 			})
 		}))
@@ -100,7 +100,7 @@ func main() {
 				log.Print("failed")
 			}
 			log.Printf("gauge: %d", data.Gauge)
-			return hub.Publish(ctx, doSomethingOnAggregate{
+			return hub.Write(ctx, doSomethingOnAggregate{
 				Foo: "bar",
 			})
 		}))
@@ -120,7 +120,7 @@ func main() {
 	defer cancel()
 	hub.Start(ctx)
 
-	err := hub.Publish(context.Background(), studentSignedUp{
+	err := hub.Write(context.Background(), studentSignedUp{
 		StudentID:  "2",
 		SignedUpAt: time.Now().UTC(),
 	})

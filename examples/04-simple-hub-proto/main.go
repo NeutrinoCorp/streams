@@ -16,7 +16,7 @@ func main() {
 	marshaler := streamhub.ProtocolBuffersMarshaler{}
 	hub := streamhub.NewHub(
 		streamhub.WithMarshaler(marshaler),
-		streamhub.WithPublisher(shmemory.NewPublisher(inMemBus)),
+		streamhub.WithWriter(shmemory.NewWriter(inMemBus)),
 		streamhub.WithListenerDriver(shmemory.NewListener(inMemBus)))
 
 	// DO NOT USE pointers to register streams when using ProtoBuf
@@ -41,7 +41,7 @@ func main() {
 	defer cancel()
 	hub.Start(ctx)
 
-	err := hub.Publish(context.Background(), &examplepb.Person{
+	err := hub.Write(context.Background(), &examplepb.Person{
 		Name:        "Alonso Ruiz",
 		Id:          15,
 		Email:       "aruiz@example.com",

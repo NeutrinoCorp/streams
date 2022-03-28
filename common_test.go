@@ -55,23 +55,23 @@ func (h hashing64AlgorithmFailingNoop) Sum64() uint64 {
 	return 0
 }
 
-type publisherNoopHook struct {
-	onPublish      func(context.Context, streamhub.Message) error
-	onPublishBatch func(context.Context, ...streamhub.Message) error
+type writerNoopHook struct {
+	onWrite      func(context.Context, streamhub.Message) error
+	onWriteBatch func(context.Context, ...streamhub.Message) error
 }
 
-var _ streamhub.Publisher = publisherNoopHook{}
+var _ streamhub.Writer = writerNoopHook{}
 
-func (p publisherNoopHook) Publish(ctx context.Context, message streamhub.Message) error {
-	if p.onPublish != nil {
-		return p.onPublish(ctx, message)
+func (p writerNoopHook) Write(ctx context.Context, message streamhub.Message) error {
+	if p.onWrite != nil {
+		return p.onWrite(ctx, message)
 	}
 	return nil
 }
 
-func (p publisherNoopHook) PublishBatch(ctx context.Context, messages ...streamhub.Message) error {
-	if p.onPublishBatch != nil {
-		return p.onPublishBatch(ctx, messages...)
+func (p writerNoopHook) WriteBatch(ctx context.Context, messages ...streamhub.Message) error {
+	if p.onWriteBatch != nil {
+		return p.onWriteBatch(ctx, messages...)
 	}
 	return nil
 }

@@ -2,5 +2,5 @@ package streamhub
 
 import "errors"
 
-// ErrMissingPublisherDriver no publisher driver was found
-var ErrMissingPublisherDriver = errors.New("streamhub: Missing publisher driver")
+// ErrMissingWriterDriver no publisher driver was found.
+var ErrMissingWriterDriver = errors.New("streamhub: Missing writer driver")

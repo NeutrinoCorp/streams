@@ -34,7 +34,7 @@ func main() {
 
 	b := shmemory.NewBus(0)
 	hub := streamhub.NewHub(
-		streamhub.WithPublisher(shmemory.NewPublisher(b)),
+		streamhub.WithWriter(shmemory.NewWriter(b)),
 		streamhub.WithListenerDriver(shmemory.NewListener(b)))
 
 	registerStream(hub)
@@ -68,7 +68,7 @@ func registerListeners(h *streamhub.Hub) {
 func publishMessages(timeFrame *time.Timer, h *streamhub.Hub) {
 	for {
 		go func() {
-			err := h.Publish(context.Background(), transactionRegistered{
+			err := h.Write(context.Background(), transactionRegistered{
 				TxID:   "1",
 				Amount: 99.99,
 			})

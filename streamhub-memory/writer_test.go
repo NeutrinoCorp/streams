@@ -15,8 +15,8 @@ func TestPublisher_Publish(t *testing.T) {
 	assert.Equal(t, 2, runtime.NumGoroutine())
 
 	bus := streamhub_memory.NewBus(0)
-	p := streamhub_memory.NewPublisher(bus)
-	err := p.Publish(context.Background(), streamhub.Message{
+	p := streamhub_memory.NewWriter(bus)
+	err := p.Write(context.Background(), streamhub.Message{
 		Stream: "foo-stream",
 	})
 	assert.ErrorIs(t, err, streamhub_memory.ErrBusNotStarted)
@@ -36,7 +36,7 @@ func TestPublisher_Publish(t *testing.T) {
 		Timeout:       0,
 	})
 	assert.NoError(t, err)
-	err = p.Publish(context.Background(), streamhub.Message{
+	err = p.Write(context.Background(), streamhub.Message{
 		Stream: "foo-stream",
 	})
 	assert.NoError(t, err)
@@ -51,8 +51,8 @@ func TestPublisher_PublishBatch(t *testing.T) {
 	assert.Equal(t, 2, runtime.NumGoroutine())
 
 	bus := streamhub_memory.NewBus(0)
-	p := streamhub_memory.NewPublisher(bus)
-	err := p.PublishBatch(context.Background(), streamhub.Message{
+	p := streamhub_memory.NewWriter(bus)
+	err := p.WriteBatch(context.Background(), streamhub.Message{
 		Stream: "foo-stream",
 	})
 	assert.ErrorIs(t, err, streamhub_memory.ErrBusNotStarted)
@@ -72,7 +72,7 @@ func TestPublisher_PublishBatch(t *testing.T) {
 		Timeout:       0,
 	})
 	assert.NoError(t, err)
-	err = p.PublishBatch(context.Background(), streamhub.Message{
+	err = p.WriteBatch(context.Background(), streamhub.Message{
 		Stream: "foo-stream",
 	}, streamhub.Message{
 		Stream: "foo-stream",

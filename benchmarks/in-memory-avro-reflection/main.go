@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/neutrinocorp/streamhub"
-	streamhub_memory "github.com/neutrinocorp/streamhub/streamhub-memory"
+	shmemory "github.com/neutrinocorp/streamhub/streamhub-memory"
 )
 
 type transactionRegistered struct {
@@ -33,12 +33,12 @@ func main() {
 	baseCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	b := streamhub_memory.NewBus(0)
+	b := shmemory.NewBus(0)
 	hub := streamhub.NewHub(
 		streamhub.WithSchemaRegistry(newAvroSchemaRegistry()),
 		streamhub.WithMarshaler(streamhub.NewAvroMarshaler()),
-		streamhub.WithPublisher(streamhub_memory.NewPublisher(b)),
-		streamhub.WithListenerDriver(streamhub_memory.NewListener(b)))
+		streamhub.WithWriter(shmemory.NewWriter(b)),
+		streamhub.WithListenerDriver(shmemory.NewListener(b)))
 
 	registerStream(hub)
 	registerListeners(hub)
@@ -88,7 +88,7 @@ func registerListeners(h *streamhub.Hub) {
 func publishMessages(timeFrame *time.Timer, h *streamhub.Hub) {
 	for {
 		go func() {
-			err := h.Publish(context.Background(), transactionRegistered{
+			err := h.Write(context.Background(), transactionRegistered{
 				TxID:   "1",
 				Amount: 99.99,
 			})
