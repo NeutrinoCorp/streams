@@ -4,8 +4,10 @@ import (
 	"context"
 )
 
-// DefaultHubInstanceName default instance names for nameless Hub instances
-var DefaultHubInstanceName = "com.streams"
+var (
+	// DefaultHubInstanceName default instance names for nameless Hub instances
+	DefaultHubInstanceName = "com.streams"
+)
 
 // Hub is the main component which enables interactions between several systems through the usage of streams.
 type Hub struct {
@@ -142,7 +144,7 @@ func (h *Hub) WriteByMessageKey(ctx context.Context, messageKey string, message 
 	return h.writeMessage(ctx, metadata, message)
 }
 
-// WriteByMessageKeyBatchItems items to be writeed as batch on the Hub.WriteByMessageKeyBatch() function
+// WriteByMessageKeyBatchItems items to be written as batch on the Hub.WriteByMessageKeyBatch() function
 type WriteByMessageKeyBatchItems map[string]interface{}
 
 // WriteByMessageKeyBatch inserts a set of messages into a stream using the custom message key from StreamRegistry in order to
@@ -173,8 +175,7 @@ func (h *Hub) WriteByMessageKeyBatch(ctx context.Context, items WriteByMessageKe
 	return h.WriteRawMessageBatch(ctx, transportMessageBuffer...)
 }
 
-// transforms a primitive message into a CloudEvent message ready for transportation. Therefore, executes a
-// message writeing job.
+// transforms a primitive message into a CloudEvent message ready for transportation.
 func (h *Hub) buildTransportMessage(ctx context.Context, metadata StreamMetadata, message interface{}) (Message, error) {
 	schemaDef := ""
 	var err error
