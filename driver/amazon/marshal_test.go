@@ -3,8 +3,8 @@ package amazon_test
 import (
 	"testing"
 
-	"github.com/neutrinocorp/streamhub"
-	"github.com/neutrinocorp/streamhub/driver/amazon"
+	"github.com/neutrinocorp/streams"
+	"github.com/neutrinocorp/streams/driver/amazon"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -12,19 +12,19 @@ import (
 func TestMarshalSnsMessage(t *testing.T) {
 	tests := []struct {
 		Name string
-		In   streamhub.Message
+		In   streams.Message
 		Exp  string
 		Err  error
 	}{
 		{
 			Name: "Empty",
-			In:   streamhub.Message{},
+			In:   streams.Message{},
 			Exp:  "{\"id\":\"\",\"stream\":\"\",\"source\":\"\",\"specversion\":\"\",\"type\":\"\",\"data\":null,\"correlation_id\":\"\",\"causation_id\":\"\"}",
 			Err:  nil,
 		},
 		{
 			Name: "Populated",
-			In: streamhub.Message{
+			In: streams.Message{
 				ID:     "123",
 				Source: "org.ncorp.foo",
 				Stream: "foo.bar.baz",
@@ -48,7 +48,7 @@ func TestMarshalSnsMessage(t *testing.T) {
 }
 
 func BenchmarkMarshalSnsMessage(b *testing.B) {
-	inMsg := streamhub.Message{
+	inMsg := streams.Message{
 		ID:     "123",
 		Source: "org.ncorp.foo",
 		Stream: "foo.bar.baz",

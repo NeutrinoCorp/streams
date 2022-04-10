@@ -1,4 +1,4 @@
-package streamhub
+package streams
 
 import (
 	"errors"
@@ -163,7 +163,7 @@ func (a AvroMarshaler) ContentType() string {
 
 var (
 	// ErrInvalidProtocolBufferFormat the given data is not a valid protocol buffer message
-	ErrInvalidProtocolBufferFormat = errors.New("streamhub: Invalid protocol buffer data")
+	ErrInvalidProtocolBufferFormat = errors.New("streams: Invalid protocol buffer data")
 )
 
 // ProtocolBuffersMarshaler handles data transformation between primitives and Google Protocol Buffers format

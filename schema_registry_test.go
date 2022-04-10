@@ -1,14 +1,14 @@
-package streamhub_test
+package streams_test
 
 import (
 	"testing"
 
-	"github.com/neutrinocorp/streamhub"
+	"github.com/neutrinocorp/streams"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestInMemorySchemaRegistry(t *testing.T) {
-	r := streamhub.InMemorySchemaRegistry{}
+	r := streams.InMemorySchemaRegistry{}
 	r.RegisterDefinition("foo", `{
 		"type": "record",
 		"name": "foo",
@@ -36,16 +36,16 @@ func TestInMemorySchemaRegistry(t *testing.T) {
 	assert.NotEmpty(t, def)
 
 	def, err = r.GetSchemaDefinition("bar", 0)
-	assert.ErrorIs(t, err, streamhub.ErrMissingSchemaDefinition)
+	assert.ErrorIs(t, err, streams.ErrMissingSchemaDefinition)
 	assert.Empty(t, def)
 
 	def, err = r.GetSchemaDefinition("baz", 1)
-	assert.ErrorIs(t, err, streamhub.ErrMissingSchemaDefinition)
+	assert.ErrorIs(t, err, streams.ErrMissingSchemaDefinition)
 	assert.Empty(t, def)
 }
 
 func BenchmarkInMemorySchemaRegistry_GetSchemaDefinition(b *testing.B) {
-	r := streamhub.InMemorySchemaRegistry{}
+	r := streams.InMemorySchemaRegistry{}
 	r.RegisterDefinition("foo", `{
 		"type": "record",
 		"name": "foo",
@@ -71,7 +71,7 @@ func BenchmarkInMemorySchemaRegistry_GetSchemaDefinition(b *testing.B) {
 }
 
 func BenchmarkInMemorySchemaRegistry_RegisterDefinition(b *testing.B) {
-	r := streamhub.InMemorySchemaRegistry{}
+	r := streams.InMemorySchemaRegistry{}
 	for i := 0; i < b.N; i++ {
 		b.ReportAllocs()
 		r.RegisterDefinition("foo", `{

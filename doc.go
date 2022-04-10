@@ -1,2 +1,2 @@
-// Package streamhub is a toolkit crafted for streaming-powered applications written in Go.
-package streamhub
+// Package streams is a toolkit crafted for data-in-motion ecosystems written in Go.
+package streams

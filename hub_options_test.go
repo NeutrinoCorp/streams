@@ -1,74 +1,74 @@
-package streamhub_test
+package streams_test
 
 import (
 	"testing"
 
-	"github.com/neutrinocorp/streamhub"
+	"github.com/neutrinocorp/streams"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestWithInstanceName(t *testing.T) {
-	hub := streamhub.NewHub()
-	assert.Equal(t, "com.streamhub", hub.InstanceName)
+	hub := streams.NewHub()
+	assert.Equal(t, "com.streams", hub.InstanceName)
 
-	hub = streamhub.NewHub(
-		streamhub.WithInstanceName("org.neutrino"))
+	hub = streams.NewHub(
+		streams.WithInstanceName("org.neutrino"))
 	assert.Equal(t, "org.neutrino", hub.InstanceName)
 }
 
 func TestWithWriter(t *testing.T) {
-	hub := streamhub.NewHub()
-	assert.IsType(t, streamhub.NoopWriter, hub.Writer)
+	hub := streams.NewHub()
+	assert.IsType(t, streams.NoopWriter, hub.Writer)
 
-	hub = streamhub.NewHub(
-		streamhub.WithWriter(streamhub.NoopWriter))
-	assert.IsType(t, streamhub.NoopWriter, hub.Writer)
+	hub = streams.NewHub(
+		streams.WithWriter(streams.NoopWriter))
+	assert.IsType(t, streams.NoopWriter, hub.Writer)
 }
 
 func TestWithMarshaler(t *testing.T) {
-	hub := streamhub.NewHub()
-	assert.IsType(t, streamhub.JSONMarshaler{}, hub.Marshaler)
+	hub := streams.NewHub()
+	assert.IsType(t, streams.JSONMarshaler{}, hub.Marshaler)
 
-	hub = streamhub.NewHub(
-		streamhub.WithMarshaler(streamhub.JSONMarshaler{}))
-	assert.IsType(t, streamhub.JSONMarshaler{}, hub.Marshaler)
+	hub = streams.NewHub(
+		streams.WithMarshaler(streams.JSONMarshaler{}))
+	assert.IsType(t, streams.JSONMarshaler{}, hub.Marshaler)
 }
 
 func TestWithReader(t *testing.T) {
-	hub := streamhub.NewHub()
+	hub := streams.NewHub()
 	assert.Empty(t, hub.Reader)
 
-	hub = streamhub.NewHub(
-		streamhub.WithReader(listenerDriverNoop{}))
+	hub = streams.NewHub(
+		streams.WithReader(listenerDriverNoop{}))
 	assert.IsType(t, listenerDriverNoop{}, hub.Reader)
 }
 
 func TestWithIDFactory(t *testing.T) {
-	hub := streamhub.NewHub()
-	assert.IsType(t, streamhub.UuidIdFactory, hub.IDFactory)
+	hub := streams.NewHub()
+	assert.IsType(t, streams.UuidIdFactory, hub.IDFactory)
 
-	hub = streamhub.NewHub(
-		streamhub.WithIDFactory(streamhub.UuidIdFactory))
-	assert.IsType(t, streamhub.UuidIdFactory, hub.IDFactory)
+	hub = streams.NewHub(
+		streams.WithIDFactory(streams.UuidIdFactory))
+	assert.IsType(t, streams.UuidIdFactory, hub.IDFactory)
 }
 
 func TestWithSchemaRegistry(t *testing.T) {
-	hub := streamhub.NewHub()
+	hub := streams.NewHub()
 	assert.Nil(t, hub.SchemaRegistry)
 
-	hub = streamhub.NewHub(
-		streamhub.WithSchemaRegistry(streamhub.NoopSchemaRegistry{}))
-	assert.IsType(t, streamhub.NoopSchemaRegistry{}, hub.SchemaRegistry)
+	hub = streams.NewHub(
+		streams.WithSchemaRegistry(streams.NoopSchemaRegistry{}))
+	assert.IsType(t, streams.NoopSchemaRegistry{}, hub.SchemaRegistry)
 }
 
 func TestWithReaderBehaviours(t *testing.T) {
-	hub := streamhub.NewHub()
+	hub := streams.NewHub()
 	assert.NotNil(t, hub.ReaderBehaviours)
 
 	totalDefaultBehaviours := len(hub.ReaderBehaviours)
-	hub = streamhub.NewHub(
-		streamhub.WithReaderBehaviours(func(node *streamhub.ReaderNode, hub *streamhub.Hub,
-			next streamhub.ReaderHandleFunc) streamhub.ReaderHandleFunc {
+	hub = streams.NewHub(
+		streams.WithReaderBehaviours(func(node *streams.ReaderNode, hub *streams.Hub,
+			next streams.ReaderHandleFunc) streams.ReaderHandleFunc {
 			return next
 		}))
 	// verify if no default behaviour was removed
@@ -76,12 +76,12 @@ func TestWithReaderBehaviours(t *testing.T) {
 }
 
 func TestWithReaderBaseOptions(t *testing.T) {
-	hub := streamhub.NewHub()
+	hub := streams.NewHub()
 	assert.NotNil(t, hub.ReaderBaseOptions)
 
 	totalDefaultOpts := len(hub.ReaderBaseOptions)
-	hub = streamhub.NewHub(
-		streamhub.WithReaderBaseOptions(streamhub.WithGroup("foo")))
+	hub = streams.NewHub(
+		streams.WithReaderBaseOptions(streams.WithGroup("foo")))
 	// verify if no default behaviour was removed
 	assert.Equal(t, totalDefaultOpts+1, len(hub.ReaderBaseOptions))
 }

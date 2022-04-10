@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/neutrinocorp/streamhub"
-	"github.com/neutrinocorp/streamhub/driver/shmemory"
+	"github.com/neutrinocorp/streams"
+	"github.com/neutrinocorp/streams/driver/shmemory"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,7 +16,7 @@ func TestPublisher_Publish(t *testing.T) {
 
 	bus := shmemory.NewBus(0)
 	p := shmemory.NewWriter(bus)
-	err := p.Write(context.Background(), streamhub.Message{
+	err := p.Write(context.Background(), streams.Message{
 		Stream: "foo-stream",
 	})
 	assert.ErrorIs(t, err, shmemory.ErrBusNotStarted)
@@ -25,9 +25,9 @@ func TestPublisher_Publish(t *testing.T) {
 	d := shmemory.NewReader(bus)
 	baseCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
 	defer cancel()
-	err = d.ExecuteTask(baseCtx, streamhub.ReaderTask{
+	err = d.ExecuteTask(baseCtx, streams.ReaderTask{
 		Stream: "foo-stream",
-		HandlerFunc: func(ctx context.Context, message streamhub.Message) error {
+		HandlerFunc: func(ctx context.Context, message streams.Message) error {
 			assert.Equal(t, "foo-stream", message.Stream)
 			return nil
 		},
@@ -36,7 +36,7 @@ func TestPublisher_Publish(t *testing.T) {
 		Timeout:       0,
 	})
 	assert.NoError(t, err)
-	err = p.Write(context.Background(), streamhub.Message{
+	err = p.Write(context.Background(), streams.Message{
 		Stream: "foo-stream",
 	})
 	assert.NoError(t, err)
@@ -52,7 +52,7 @@ func TestPublisher_PublishBatch(t *testing.T) {
 
 	bus := shmemory.NewBus(0)
 	p := shmemory.NewWriter(bus)
-	_, err := p.WriteBatch(context.Background(), streamhub.Message{
+	_, err := p.WriteBatch(context.Background(), streams.Message{
 		Stream: "foo-stream",
 	})
 	assert.ErrorIs(t, err, shmemory.ErrBusNotStarted)
@@ -61,9 +61,9 @@ func TestPublisher_PublishBatch(t *testing.T) {
 	d := shmemory.NewReader(bus)
 	baseCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
 	defer cancel()
-	err = d.ExecuteTask(baseCtx, streamhub.ReaderTask{
+	err = d.ExecuteTask(baseCtx, streams.ReaderTask{
 		Stream: "foo-stream",
-		HandlerFunc: func(ctx context.Context, message streamhub.Message) error {
+		HandlerFunc: func(ctx context.Context, message streams.Message) error {
 			assert.Equal(t, "foo-stream", message.Stream)
 			return nil
 		},
@@ -72,9 +72,9 @@ func TestPublisher_PublishBatch(t *testing.T) {
 		Timeout:       0,
 	})
 	assert.NoError(t, err)
-	_, err = p.WriteBatch(context.Background(), streamhub.Message{
+	_, err = p.WriteBatch(context.Background(), streams.Message{
 		Stream: "foo-stream",
-	}, streamhub.Message{
+	}, streams.Message{
 		Stream: "foo-stream",
 	})
 	assert.NoError(t, err)

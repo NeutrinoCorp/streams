@@ -1,8 +1,8 @@
-package streamhub
+package streams
 
 import "context"
 
-// MessageContextKey is the streamhub context key to inject data into transport messages.
+// MessageContextKey is the streams context key to inject data into transport messages.
 type MessageContextKey string
 
 const (

@@ -1,4 +1,4 @@
-package streamhub
+package streams
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 // The middleware gets injected the context ReaderNode (the stream-reading job to be executed), the root Hub instance and
 // the parent middleware function.
 //
-// Moreover, there are built-in behaviours ready to be used with streamhub:
+// Moreover, there are built-in behaviours ready to be used with streams:
 //
 // - Retry backoff
 //

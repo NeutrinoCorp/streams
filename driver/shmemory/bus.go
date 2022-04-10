@@ -3,14 +3,14 @@ package shmemory
 import (
 	"context"
 
-	"github.com/neutrinocorp/streamhub"
+	"github.com/neutrinocorp/streams"
 )
 
 // Bus is an in-memory message broker to enable interactions between publishers and stream-listeners
 type Bus struct {
-	messageBuffer chan streamhub.Message
+	messageBuffer chan streams.Message
 	// key: Stream name | value: List of handlers
-	messageHandlers map[string][]streamhub.ReaderTask
+	messageHandlers map[string][]streams.ReaderTask
 
 	startedBus    bool
 	maxGoroutines int
@@ -22,24 +22,24 @@ func NewBus(maxGoroutines int) *Bus {
 		maxGoroutines = 100
 	}
 	return &Bus{
-		messageBuffer:   make(chan streamhub.Message),
-		messageHandlers: map[string][]streamhub.ReaderTask{},
+		messageBuffer:   make(chan streams.Message),
+		messageHandlers: map[string][]streams.ReaderTask{},
 		startedBus:      false,
 		maxGoroutines:   maxGoroutines,
 	}
 }
 
-func (b *Bus) registerHandler(task streamhub.ReaderTask) {
+func (b *Bus) registerHandler(task streams.ReaderTask) {
 	handlers, ok := b.messageHandlers[task.Stream]
 	if !ok {
-		handlers = make([]streamhub.ReaderTask, 0)
+		handlers = make([]streams.ReaderTask, 0)
 	}
 
 	handlers = append(handlers, task)
 	b.messageHandlers[task.Stream] = handlers
 }
 
-func (b *Bus) write(_ context.Context, message streamhub.Message) error {
+func (b *Bus) write(_ context.Context, message streams.Message) error {
 	if !b.startedBus {
 		return ErrBusNotStarted
 	}
@@ -63,7 +63,7 @@ func (b *Bus) start(ctx context.Context) {
 			case sem <- struct{}{}:
 			}
 			for _, t := range b.messageHandlers[msg.Stream] {
-				go func(task streamhub.ReaderTask, message streamhub.Message) {
+				go func(task streams.ReaderTask, message streams.Message) {
 					scopedCtx, cancel := context.WithTimeout(ctx, task.Timeout)
 					defer cancel()
 					defer func() { <-sem }()

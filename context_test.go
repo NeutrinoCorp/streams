@@ -1,10 +1,10 @@
-package streamhub_test
+package streams_test
 
 import (
 	"context"
 	"testing"
 
-	"github.com/neutrinocorp/streamhub"
+	"github.com/neutrinocorp/streams"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,19 +24,19 @@ var injectCorrelationSuite = []struct {
 		Exp:   "123",
 	},
 	{
-		InCtx: context.WithValue(context.Background(), streamhub.ContextCorrelationID, "abc"),
+		InCtx: context.WithValue(context.Background(), streams.ContextCorrelationID, "abc"),
 		In:    "123",
 		Exp:   "123",
 	},
 	{
-		InCtx: context.WithValue(context.Background(), streamhub.ContextCausationID,
-			streamhub.MessageContextKey("abc")),
+		InCtx: context.WithValue(context.Background(), streams.ContextCausationID,
+			streams.MessageContextKey("abc")),
 		In:  "123",
 		Exp: "123",
 	},
 	{
-		InCtx: context.WithValue(context.Background(), streamhub.ContextCorrelationID,
-			streamhub.MessageContextKey("abc")),
+		InCtx: context.WithValue(context.Background(), streams.ContextCorrelationID,
+			streams.MessageContextKey("abc")),
 		In:  "123",
 		Exp: "abc",
 	},
@@ -44,7 +44,7 @@ var injectCorrelationSuite = []struct {
 
 func TestInjectMessageCorrelationID(t *testing.T) {
 	for _, tt := range injectCorrelationSuite {
-		id := streamhub.InjectMessageCorrelationID(tt.InCtx, tt.In)
+		id := streams.InjectMessageCorrelationID(tt.InCtx, tt.In)
 		assert.Equal(t, tt.Exp, id)
 	}
 }
@@ -65,19 +65,19 @@ var injectCausationSuite = []struct {
 		Exp:   "123",
 	},
 	{
-		InCtx: context.WithValue(context.Background(), streamhub.ContextCausationID, "abc"),
+		InCtx: context.WithValue(context.Background(), streams.ContextCausationID, "abc"),
 		In:    "123",
 		Exp:   "123",
 	},
 	{
-		InCtx: context.WithValue(context.Background(), streamhub.ContextCorrelationID,
-			streamhub.MessageContextKey("abc")),
+		InCtx: context.WithValue(context.Background(), streams.ContextCorrelationID,
+			streams.MessageContextKey("abc")),
 		In:  "123",
 		Exp: "123",
 	},
 	{
-		InCtx: context.WithValue(context.Background(), streamhub.ContextCausationID,
-			streamhub.MessageContextKey("abc")),
+		InCtx: context.WithValue(context.Background(), streams.ContextCausationID,
+			streams.MessageContextKey("abc")),
 		In:  "123",
 		Exp: "abc",
 	},
@@ -85,7 +85,7 @@ var injectCausationSuite = []struct {
 
 func TestInjectMessageCausationID(t *testing.T) {
 	for _, tt := range injectCausationSuite {
-		id := streamhub.InjectMessageCausationID(tt.InCtx, tt.In)
+		id := streams.InjectMessageCausationID(tt.InCtx, tt.In)
 		assert.Equal(t, tt.Exp, id)
 	}
 }

@@ -1,4 +1,4 @@
-package streamhub
+package streams
 
 import (
 	"math/rand"

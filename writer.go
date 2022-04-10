@@ -1,4 +1,4 @@
-package streamhub
+package streams
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 // Writer inserts messages into streams assigned on the StreamRegistry in order to propagate the
 // data to a set of subscribed systems for further processing.
 //
-// This type should be provided by a streamhub Driver (e.g. Apache Pulsar, Apache Kafka, Amazon SNS)
+// This type should be provided by a streams Driver (e.g. Apache Pulsar, Apache Kafka, Amazon SNS)
 type Writer interface {
 	// Write inserts a message into a stream assigned to the message in the StreamRegistry in order to propagate the
 	// data to a set of subscribed systems for further processing.

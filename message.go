@@ -1,4 +1,4 @@
-package streamhub
+package streams
 
 import (
 	"strconv"
@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// CloudEventsSpecVersion the CloudEvents specification version used by streamhub
+// CloudEventsSpecVersion the CloudEvents specification version used by streams
 const CloudEventsSpecVersion = "1.0"
 
 // Message is a unit of information which holds the primitive message (data) in binary format along multiple

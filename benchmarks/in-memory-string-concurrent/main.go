@@ -7,8 +7,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/neutrinocorp/streamhub"
-	"github.com/neutrinocorp/streamhub/driver/shmemory"
+	"github.com/neutrinocorp/streams"
+	"github.com/neutrinocorp/streams/driver/shmemory"
 )
 
 type transactionRegistered struct {
@@ -35,9 +35,9 @@ func main() {
 	defer cancel()
 
 	b := shmemory.NewBus(1024)
-	hub := streamhub.NewHub(
-		streamhub.WithWriter(shmemory.NewWriter(b)),
-		streamhub.WithReader(shmemory.NewReader(b)))
+	hub := streams.NewHub(
+		streams.WithWriter(shmemory.NewWriter(b)),
+		streams.WithReader(shmemory.NewReader(b)))
 
 	registerStream(hub)
 	registerListeners(hub)
@@ -56,24 +56,24 @@ func main() {
 	log.Printf("total goroutines at shutdown: %d", runtime.NumGoroutine())
 }
 
-func registerStream(h *streamhub.Hub) {
-	h.RegisterStreamByString("ncorp.wallet.tx.registered", streamhub.StreamMetadata{
+func registerStream(h *streams.Hub) {
+	h.RegisterStreamByString("ncorp.wallet.tx.registered", streams.StreamMetadata{
 		Stream: "ncorp.wallet.tx.registered",
 		GoType: nil,
 	})
 }
 
-func registerListeners(h *streamhub.Hub) {
+func registerListeners(h *streams.Hub) {
 	h.ReadByStreamKey("ncorp.wallet.tx.registered",
-		streamhub.WithConcurrencyLevel(2),
-		streamhub.WithHandlerFunc(func(ctx context.Context, message streamhub.Message) error {
+		streams.WithConcurrencyLevel(2),
+		streams.WithHandlerFunc(func(ctx context.Context, message streams.Message) error {
 			atomic.AddUint64(&totalProcessedMessages, 1)
 			atomic.StoreUint64(&totalGoroutines, uint64(runtime.NumGoroutine()))
 			return nil
 		}))
 }
 
-func publishMessages(timeFrame *time.Timer, h *streamhub.Hub) {
+func publishMessages(timeFrame *time.Timer, h *streams.Hub) {
 	for {
 		go func() {
 			_ = h.WriteByMessageKey(context.Background(), "ncorp.wallet.tx.registered", transactionRegistered{

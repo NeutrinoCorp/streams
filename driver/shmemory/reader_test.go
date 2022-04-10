@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/neutrinocorp/streamhub"
-	"github.com/neutrinocorp/streamhub/driver/shmemory"
+	"github.com/neutrinocorp/streams"
+	"github.com/neutrinocorp/streams/driver/shmemory"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,7 +17,7 @@ func TestReader_ExecuteTask(t *testing.T) {
 	d := shmemory.NewReader(shmemory.NewBus(0))
 	baseCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
 	defer cancel()
-	err := d.ExecuteTask(baseCtx, streamhub.ReaderTask{
+	err := d.ExecuteTask(baseCtx, streams.ReaderTask{
 		Stream:        "",
 		HandlerFunc:   nil,
 		Group:         "",

@@ -1,4 +1,4 @@
-package streamhub
+package streams
 
 import (
 	"errors"
@@ -7,7 +7,7 @@ import (
 )
 
 // ErrMissingSchemaDefinition the requested stream message definition was not found in the SchemaRegistry
-var ErrMissingSchemaDefinition = errors.New("streamhub: Missing stream schema definition in schema registry")
+var ErrMissingSchemaDefinition = errors.New("streams: Missing stream schema definition in schema registry")
 
 // SchemaRegistry is an external storage of stream message schemas definitions with proper versioning.
 //

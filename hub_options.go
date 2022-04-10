@@ -1,4 +1,4 @@
-package streamhub
+package streams
 
 type hubOptions struct {
 	instanceName     string
