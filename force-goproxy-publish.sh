@@ -27,6 +27,6 @@ then
   MAJOR_VERSION="/$VERSION_PREFIX"
 fi
 
-GO_PROXY_URL=proxy.golang.org/github.com/neutrinocorp/streamhub"$MAJOR_VERSION"/@v/"$VERSION_TAG".info
+GO_PROXY_URL=proxy.golang.org/github.com/neutrinocorp/streams"$MAJOR_VERSION"/@v/"$VERSION_TAG".info
 echo "forcing package publishing using URL: $GO_PROXY_URL"
 curl "$GO_PROXY_URL"

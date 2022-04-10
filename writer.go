@@ -16,8 +16,9 @@ type Writer interface {
 	// data to a set of subscribed systems for further processing.
 	//
 	// Depending on the underlying Writer driver implementation, this function MIGHT return an error if a single operation failed,
-	// or it MIGHT return an error if the whole operation failed
-	WriteBatch(ctx context.Context, messages ...Message) error
+	// or it MIGHT return an error if the whole operation failed. In addition, this function will return the number of
+	// successful messages written into streams.
+	WriteBatch(ctx context.Context, messages ...Message) (uint32, error)
 }
 
 type noopWriter struct{}
@@ -31,6 +32,6 @@ func (n noopWriter) Write(_ context.Context, _ Message) error {
 }
 
 // WriteBatch is the no-op implementation of Writer.WriteBatch()
-func (n noopWriter) WriteBatch(_ context.Context, _ ...Message) error {
-	return nil
+func (n noopWriter) WriteBatch(_ context.Context, _ ...Message) (uint32, error) {
+	return 0, nil
 }

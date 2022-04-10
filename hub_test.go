@@ -42,7 +42,7 @@ func TestHub_WriteBatch(t *testing.T) {
 	hub := streamhub.NewHub(streamhub.WithSchemaRegistry(streamhub.NoopSchemaRegistry{}))
 	hub.Writer = nil
 	ctx := context.Background()
-	err := hub.WriteBatch(ctx, fooMessage{
+	_, err := hub.WriteBatch(ctx, fooMessage{
 		Foo: "foo",
 	})
 	assert.ErrorIs(t, err, streamhub.ErrMissingStream)
@@ -52,20 +52,20 @@ func TestHub_WriteBatch(t *testing.T) {
 		SchemaDefinitionName: "",
 		SchemaVersion:        0,
 	})
-	err = hub.WriteBatch(ctx, fooMessage{
+	_, err = hub.WriteBatch(ctx, fooMessage{
 		Foo: "foo",
 	})
 	assert.ErrorIs(t, err, streamhub.ErrMissingWriterDriver)
 
 	hub.Writer = streamhub.NoopWriter
 	hub.IDFactory = failingFakeIDFactory
-	err = hub.WriteBatch(ctx, fooMessage{
+	_, err = hub.WriteBatch(ctx, fooMessage{
 		Foo: "foo",
 	})
 	assert.EqualValues(t, errors.New("generic id factory error"), err)
 
 	hub.IDFactory = streamhub.RandInt64Factory
-	err = hub.WriteBatch(ctx, fooMessage{
+	_, err = hub.WriteBatch(ctx, fooMessage{
 		Foo: "foo",
 	})
 	assert.NoError(t, err)
@@ -210,23 +210,25 @@ func TestHub_WriteRawMessageBatch(t *testing.T) {
 		}),
 	}
 
-	err := hub.WriteRawMessageBatch(ctx, messageBuffer...)
+	out, err := hub.WriteRawMessageBatch(ctx, messageBuffer...)
 	assert.ErrorIs(t, err, streamhub.ErrMissingWriterDriver)
+	assert.Equal(t, uint32(0), out)
 
 	totalMessagesPushed := 0
 	hub.Writer = writerNoopHook{
-		onWriteBatch: func(_ context.Context, messages ...streamhub.Message) error {
+		onWriteBatch: func(_ context.Context, messages ...streamhub.Message) (uint32, error) {
 			totalMessagesPushed = len(messages)
-			return nil
+			return uint32(totalMessagesPushed), nil
 		},
 	}
-	err = hub.WriteRawMessageBatch(ctx, messageBuffer...)
+	out, err = hub.WriteRawMessageBatch(ctx, messageBuffer...)
 	assert.NoError(t, err)
 	assert.Equal(t, len(messageBuffer), totalMessagesPushed)
+	assert.Equal(t, uint32(len(messageBuffer)), out)
 
 	// testing noopWriter from streamhub package to increase test coverage
 	hub.Writer = streamhub.NoopWriter
-	err = hub.WriteRawMessageBatch(ctx, messageBuffer...)
+	_, err = hub.WriteRawMessageBatch(ctx, messageBuffer...)
 	assert.NoError(t, err)
 }
 
@@ -273,7 +275,7 @@ func TestHub_WriteByMessageKey(t *testing.T) {
 func TestHub_WriteByMessageKeyBatch(t *testing.T) {
 	hub := streamhub.NewHub(streamhub.WithSchemaRegistry(streamhub.NoopSchemaRegistry{}))
 	ctx := context.Background()
-	err := hub.WriteByMessageKeyBatch(ctx, map[string]interface{}{
+	_, err := hub.WriteByMessageKeyBatch(ctx, map[string]interface{}{
 		"foo": fooMessage{
 			Foo: "foo",
 		},
@@ -287,7 +289,7 @@ func TestHub_WriteByMessageKeyBatch(t *testing.T) {
 	})
 
 	hub.IDFactory = failingFakeIDFactory
-	err = hub.WriteByMessageKeyBatch(ctx, map[string]interface{}{
+	_, err = hub.WriteByMessageKeyBatch(ctx, map[string]interface{}{
 		"foo_custom": fooMessage{
 			Foo: "custom",
 		},
@@ -295,7 +297,7 @@ func TestHub_WriteByMessageKeyBatch(t *testing.T) {
 	assert.EqualValues(t, errors.New("generic id factory error"), err)
 
 	hub.IDFactory = streamhub.RandInt64Factory
-	err = hub.WriteByMessageKeyBatch(ctx, map[string]interface{}{
+	_, err = hub.WriteByMessageKeyBatch(ctx, map[string]interface{}{
 		"foo_custom": fooMessage{
 			Foo: "custom",
 		},
@@ -303,13 +305,13 @@ func TestHub_WriteByMessageKeyBatch(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestHub_Listen(t *testing.T) {
+func TestHub_Read(t *testing.T) {
 	h := streamhub.NewHub()
-	err := h.Listen(fooMessage{})
+	err := h.Read(fooMessage{})
 	assert.ErrorIs(t, err, streamhub.ErrMissingStream)
 
 	h.StreamRegistry.Set(fooMessage{}, streamhub.StreamMetadata{})
-	err = h.Listen(fooMessage{})
+	err = h.Read(fooMessage{})
 	assert.NoError(t, err)
 }
 
@@ -319,21 +321,21 @@ func TestHub_Start(t *testing.T) {
 	h.StreamRegistry.Set(fooMessage{}, streamhub.StreamMetadata{
 		Stream: "foo-stream",
 	})
-	err := h.Listen(fooMessage{})
+	err := h.Read(fooMessage{})
 	assert.NoError(t, err)
 
 	baseCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
 	defer cancel()
 	h.Start(baseCtx)
 
-	// ListenerNode scheduler will not schedule if a ListenerDriver wasn't defined at either Hub (BaseListenerDriver)
-	// level or ListenerNode level
+	// ReaderNode scheduler will not schedule if a ReaderDriver wasn't defined at either Hub (BaseReaderDriver)
+	// level or ReaderNode level
 	assert.Equal(t, 2, runtime.NumGoroutine())
 
 	h.StreamRegistry.Set(fooMessage{}, streamhub.StreamMetadata{
 		Stream: "foo-stream",
 	})
-	err = h.Listen(fooMessage{}, streamhub.WithDriver(listenerDriverNoopGoroutine{}))
+	err = h.Read(fooMessage{}, streamhub.WithDriver(listenerDriverNoopGoroutine{}))
 	assert.NoError(t, err)
 
 	baseCtx2, cancel2 := context.WithTimeout(context.Background(), time.Millisecond)

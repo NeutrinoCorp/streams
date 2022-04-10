@@ -2,18 +2,18 @@ package streamhub
 
 import "time"
 
-// ListenerTask job metadata in order to be executed by the ListenerNodeDriver.
-type ListenerTask struct {
+// ReaderTask job metadata in order to be executed by the ListenerNodeDriver.
+type ReaderTask struct {
 	Stream             string
-	HandlerFunc        ListenerFunc
+	HandlerFunc        ReaderHandleFunc
 	Group              string
 	Configuration      interface{}
 	Timeout            time.Duration
 	MaxHandlerPoolSize int
 }
 
-func newListenerTask(n *ListenerNode) ListenerTask {
-	return ListenerTask{
+func newReaderTask(n *ReaderNode) ReaderTask {
+	return ReaderTask{
 		Stream:             n.Stream,
 		HandlerFunc:        n.HandlerFunc,
 		Group:              n.Group,

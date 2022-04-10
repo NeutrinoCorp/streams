@@ -6,10 +6,10 @@ import (
 	"github.com/cenkalti/backoff/v4"
 )
 
-// ListenerBehaviour is a middleware function with extra functionality which will be executed prior a ListenerFunc
-// or Listener component for every stream-listening job instance registered into a Hub.
+// ReaderBehaviour is a middleware function with extra functionality which will be executed prior a ReaderHandleFunc
+// or Reader component for every stream-reading job instance registered into a Hub.
 //
-// The middleware gets injected the context ListenerNode (the stream-listening job to be executed), the root Hub instance and
+// The middleware gets injected the context ReaderNode (the stream-reading job to be executed), the root Hub instance and
 // the parent middleware function.
 //
 // Moreover, there are built-in behaviours ready to be used with streamhub:
@@ -29,28 +29,28 @@ import (
 // - Tracing*
 //
 // *Manual specification on configuration required
-type ListenerBehaviour func(node *ListenerNode, hub *Hub, next ListenerFunc) ListenerFunc
+type ReaderBehaviour func(node *ReaderNode, hub *Hub, next ReaderHandleFunc) ReaderHandleFunc
 
-// ListenerBaseBehaviours default ListenerBehaviours
+// ReaderBaseBehaviours default ReaderBehaviours
 //
 // Behaviours will be executed in descending order
-var ListenerBaseBehaviours = []ListenerBehaviour{
-	unmarshalListenerBehaviour,
-	injectGroupListenerBehaviour,
-	injectTxIDsListenerBehaviour,
-	retryListenerBehaviour,
+var ReaderBaseBehaviours = []ReaderBehaviour{
+	unmarshalReaderBehaviour,
+	injectGroupReaderBehaviour,
+	injectTxIDsReaderBehaviour,
+	retryReaderBehaviour,
 }
 
-// ListenerBaseBehavioursNoUnmarshal default ListenerBehaviours without unmarshaling
+// ReaderBaseBehavioursNoUnmarshal default ReaderBehaviours without unmarshaling
 //
 // Behaviours will be executed in descending order
-var ListenerBaseBehavioursNoUnmarshal = []ListenerBehaviour{
-	injectGroupListenerBehaviour,
-	injectTxIDsListenerBehaviour,
-	retryListenerBehaviour,
+var ReaderBaseBehavioursNoUnmarshal = []ReaderBehaviour{
+	injectGroupReaderBehaviour,
+	injectTxIDsReaderBehaviour,
+	retryReaderBehaviour,
 }
 
-var retryListenerBehaviour ListenerBehaviour = func(node *ListenerNode, _ *Hub, next ListenerFunc) ListenerFunc {
+var retryReaderBehaviour ReaderBehaviour = func(node *ReaderNode, _ *Hub, next ReaderHandleFunc) ReaderHandleFunc {
 	b := backoff.NewExponentialBackOff()
 	b.InitialInterval = node.RetryInitialInterval
 	b.MaxInterval = node.RetryMaxInterval
@@ -62,7 +62,7 @@ var retryListenerBehaviour ListenerBehaviour = func(node *ListenerNode, _ *Hub, 
 	}
 }
 
-var unmarshalListenerBehaviour ListenerBehaviour = func(_ *ListenerNode, h *Hub, next ListenerFunc) ListenerFunc {
+var unmarshalReaderBehaviour ReaderBehaviour = func(_ *ReaderNode, h *Hub, next ReaderHandleFunc) ReaderHandleFunc {
 	return func(ctx context.Context, message Message) error {
 		metadata, err := h.StreamRegistry.GetByStreamName(message.Stream)
 		if err != nil {
@@ -87,14 +87,14 @@ var unmarshalListenerBehaviour ListenerBehaviour = func(_ *ListenerNode, h *Hub,
 	}
 }
 
-var injectGroupListenerBehaviour ListenerBehaviour = func(node *ListenerNode, _ *Hub, next ListenerFunc) ListenerFunc {
+var injectGroupReaderBehaviour ReaderBehaviour = func(node *ReaderNode, _ *Hub, next ReaderHandleFunc) ReaderHandleFunc {
 	return func(ctx context.Context, message Message) error {
 		message.GroupName = node.Group
 		return next(ctx, message)
 	}
 }
 
-var injectTxIDsListenerBehaviour ListenerBehaviour = func(_ *ListenerNode, h *Hub, next ListenerFunc) ListenerFunc {
+var injectTxIDsReaderBehaviour ReaderBehaviour = func(_ *ReaderNode, h *Hub, next ReaderHandleFunc) ReaderHandleFunc {
 	return func(ctx context.Context, message Message) error {
 		ctxCorrelation := context.WithValue(ctx, ContextCorrelationID, MessageContextKey(message.CorrelationID))
 		ctxCausation := context.WithValue(ctxCorrelation, ContextCausationID, MessageContextKey(message.ID))

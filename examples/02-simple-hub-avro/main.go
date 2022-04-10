@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/neutrinocorp/streamhub"
-	shmemory "github.com/neutrinocorp/streamhub/streamhub-memory"
+	"github.com/neutrinocorp/streamhub/driver/shmemory"
 )
 
 type studentSignedUp struct {
@@ -18,7 +18,7 @@ func main() {
 	inMemBus := shmemory.NewBus(0)
 	hub := streamhub.NewHub(
 		streamhub.WithWriter(shmemory.NewWriter(inMemBus)),
-		streamhub.WithListenerDriver(shmemory.NewListener(inMemBus)),
+		streamhub.WithReader(shmemory.NewReader(inMemBus)),
 		streamhub.WithSchemaRegistry(setupSchemaRegistry()),
 		streamhub.WithMarshaler(streamhub.NewAvroMarshaler()))
 	hub.RegisterStream(studentSignedUp{}, streamhub.StreamMetadata{
@@ -27,9 +27,9 @@ func main() {
 		SchemaVersion:        1,
 	})
 
-	_ = hub.Listen(studentSignedUp{},
+	_ = hub.Read(studentSignedUp{},
 		streamhub.WithGroup("example-job-on-student-signed_up"),
-		streamhub.WithListenerFunc(func(ctx context.Context, message streamhub.Message) error {
+		streamhub.WithHandlerFunc(func(ctx context.Context, message streamhub.Message) error {
 			log.Printf("message decoded at reflection-based: %+v", message.DecodedData)
 			return nil
 		}))
