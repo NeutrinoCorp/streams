@@ -81,7 +81,12 @@ var unmarshalReaderBehaviour ReaderBehaviour = func(_ *ReaderNode, h *Hub, next 
 			if err = h.Marshaler.Unmarshal(schemaDef, message.Data, decodedData); err != nil {
 				return err
 			}
-			message.DecodedData = decodedData
+			switch h.Marshaler.ContentType() {
+			case MarshalerProtoContentType:
+				message.DecodedData = decodedData
+			default:
+				message.DecodedData = metadata.GoType.Indirect(decodedData)
+			}
 		}
 		return next(ctx, message)
 	}

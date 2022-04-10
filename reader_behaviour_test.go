@@ -6,10 +6,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/modern-go/reflect2"
-
 	jsoniter "github.com/json-iterator/go"
+	"github.com/modern-go/reflect2"
+	"github.com/neutrinocorp/streams/testdata/proto/examplepb"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestReaderNodeHandlerBehaviour_Retry(t *testing.T) {
@@ -36,15 +38,14 @@ type fooMessage struct {
 
 func TestReaderNodeHandlerBehaviour_Unmarshal(t *testing.T) {
 	var h ReaderHandleFunc = func(ctx context.Context, message Message) error {
-		// streams now passes decoded data as pointer
-		// This is caused by the usage of the reflect2 package and the new protobuf implementation.
+		// streams now passes decoded data as pointer dereference.
 		//
 		// Protobuf messages are complex structures with inner data components such as sync.Mutex which require a
 		// pointer struct to avoid data copies
-		dataValid, ok := message.DecodedData.(*fooMessage)
-		assert.True(t, ok)
-		_, ok = message.DecodedData.(fooMessage)
-		assert.False(t, ok)
+		dataValid, ok := message.DecodedData.(fooMessage)
+		require.True(t, ok)
+		_, ok = message.DecodedData.(*fooMessage)
+		require.False(t, ok)
 		assert.Equal(t, "foo", dataValid.Hello)
 		return nil
 	}
@@ -85,6 +86,55 @@ func TestReaderNodeHandlerBehaviour_Unmarshal(t *testing.T) {
 	err = h(context.Background(), Message{
 		Stream: "foo-stream",
 		Data:   fooJSON,
+	})
+	assert.NoError(t, err)
+}
+
+func TestReaderNodeHandlerBehaviour_UnmarshalProto(t *testing.T) {
+	var h ReaderHandleFunc = func(ctx context.Context, message Message) error {
+		// streams now passes decoded data as pointer when proto marshaler is selected.
+		// This is caused by the usage of the reflect2 package and the new protobuf implementation.
+		//
+		// Protobuf messages are complex structures with inner data components such as sync.Mutex which require a
+		// pointer struct to avoid data copies
+		dataValid, ok := message.DecodedData.(*examplepb.Person)
+		require.True(t, ok)
+		_, ok = message.DecodedData.(examplepb.Person)
+		require.False(t, ok)
+		assert.Equal(t, dataValid.Email, "foo@example.com")
+		return nil
+	}
+	hub := NewHub(WithSchemaRegistry(InMemorySchemaRegistry{
+		"foo": "foobarbaz",
+	}), WithMarshaler(ProtocolBuffersMarshaler{}))
+	h = unmarshalReaderBehaviour(&ReaderNode{}, hub, h)
+
+	baseMsg := Message{
+		Stream: "foo-stream",
+	}
+
+	err := h(context.Background(), baseMsg)
+	assert.ErrorIs(t, err, ErrMissingStream)
+
+	hub.StreamRegistry.SetByString("foo", StreamMetadata{Stream: "foo-stream", SchemaDefinitionName: "bar"})
+	err = h(context.Background(), baseMsg)
+	assert.ErrorIs(t, err, ErrMissingSchemaDefinition)
+
+	hub.StreamRegistry.SetByString("foo", StreamMetadata{
+		Stream:               "foo-stream",
+		SchemaDefinitionName: "foo",
+		GoType:               reflect2.TypeOf(examplepb.Person{}),
+	})
+	fooProto, _ := proto.Marshal(&examplepb.Person{
+		Name:  "Foo",
+		Id:    10,
+		Email: "foo@example.com",
+	})
+	assert.NotNil(t, fooProto)
+
+	err = h(context.Background(), Message{
+		Stream: "foo-stream",
+		Data:   fooProto,
 	})
 	assert.NoError(t, err)
 }

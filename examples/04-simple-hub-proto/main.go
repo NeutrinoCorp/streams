@@ -31,7 +31,6 @@ func main() {
 			msg, ok := message.DecodedData.(*examplepb.Person)
 			if ok {
 				log.Printf("%+v", msg)
-				log.Print(message.Subject)
 			}
 			return nil
 		}))
@@ -41,14 +40,12 @@ func main() {
 	hub.Start(ctx)
 
 	err := hub.Write(context.Background(), &examplepb.Person{
-		Name:        "Alonso Ruiz",
-		Id:          15,
-		Email:       "aruiz@example.com",
-		Phones:      nil,
-		LastUpdated: nil,
+		Name:  "Alonso Ruiz",
+		Id:    15,
+		Email: "aruiz@example.com",
 	})
 	if err != nil {
 		panic(err)
 	}
-	time.Sleep(time.Second * 10)
+	time.Sleep(time.Second * 3)
 }

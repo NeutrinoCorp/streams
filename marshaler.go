@@ -11,6 +11,15 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+const (
+	// MarshalerProtoContentType default content-type header for Protocol Buffer marshaller.
+	MarshalerProtoContentType = "application/octet-stream"
+	// MarshalerJSONContentType default content-type header for JSON marshaller.
+	MarshalerJSONContentType = "application/json"
+	// MarshalerAvroContentType default content-type header for Apache Avro marshaller.
+	MarshalerAvroContentType = "application/avro"
+)
+
 // Marshaler handles data transformation between primitives and specific codecs/formats (e.g. JSON, Apache Avro).
 type Marshaler interface {
 	// Marshal transforms a complex data type into a primitive binary array for data transportation.
@@ -60,7 +69,7 @@ func (m JSONMarshaler) Unmarshal(_ string, data []byte, ref interface{}) error {
 
 // ContentType retrieves the encoding/decoding JSON format using RFC 2046 standard (application/json).
 func (m JSONMarshaler) ContentType() string {
-	return "application/json"
+	return MarshalerJSONContentType
 }
 
 // AvroMarshaler handles data transformation between primitives and Apache Avro format.
@@ -158,7 +167,7 @@ func (a AvroMarshaler) Unmarshal(schemaDef string, data []byte, ref interface{})
 
 // ContentType retrieves the encoding/decoding Apache Avro format using RFC 2046 standard (application/avro).
 func (a AvroMarshaler) ContentType() string {
-	return "application/avro"
+	return MarshalerAvroContentType
 }
 
 var (
@@ -195,5 +204,5 @@ func (p ProtocolBuffersMarshaler) Unmarshal(_ string, data []byte, ref interface
 // More information here: https://github.com/google/protorpc/commit/eb03145a6a7c72ae6cc43867d9635a5b8d8c4545
 func (p ProtocolBuffersMarshaler) ContentType() string {
 	// took reference from: https://github.com/google/protorpc/commit/eb03145a6a7c72ae6cc43867d9635a5b8d8c4545
-	return "application/octet-stream"
+	return MarshalerProtoContentType
 }
