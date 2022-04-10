@@ -1,0 +1,18 @@
+version: '3.8'
+services:
+  localstack:
+    image: "localstack/localstack:latest-amd64"
+    network_mode: bridge
+    environment:
+      - SERVICES=sns,sqs
+      - EDGE_PORT=4566
+      - DATA_DIR=${DATA_DIR-}
+      - HOST_TMP_FOLDER=${TMPDIR:-/tmp/}localstack
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - AWS_DEFAULT_REGION=us-east-1
+    ports:
+      - "127.0.0.1:4566:4566"
+      - "127.0.0.1:4571:4571"
+    volumes:
+      - "${TMPDIR:-/tmp}/localstack:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
