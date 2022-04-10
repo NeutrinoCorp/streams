@@ -1,4 +1,4 @@
-package streamhub_memory_test
+package shmemory_test
 
 import (
 	"context"
@@ -7,17 +7,17 @@ import (
 	"time"
 
 	"github.com/neutrinocorp/streamhub"
-	shmemory "github.com/neutrinocorp/streamhub/streamhub-memory"
+	"github.com/neutrinocorp/streamhub/driver/shmemory"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestListenerDriver_ExecuteTask(t *testing.T) {
+func TestReader_ExecuteTask(t *testing.T) {
 	assert.Equal(t, 2, runtime.NumGoroutine())
 
-	d := shmemory.NewListener(shmemory.NewBus(0))
+	d := shmemory.NewReader(shmemory.NewBus(0))
 	baseCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
 	defer cancel()
-	err := d.ExecuteTask(baseCtx, streamhub.ListenerTask{
+	err := d.ExecuteTask(baseCtx, streamhub.ReaderTask{
 		Stream:        "",
 		HandlerFunc:   nil,
 		Group:         "",

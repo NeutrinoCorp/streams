@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	// DefaultConcurrencyLevel default stream-listening jobs to be running concurrently for each ListenerNode.
+	// DefaultConcurrencyLevel default stream-listening jobs to be running concurrently for each ReaderNode.
 	DefaultConcurrencyLevel = 1
 	// DefaultRetryInitialInterval default initial interval duration between each stream-listening job provisioning on failures.
 	DefaultRetryInitialInterval = time.Second * 3
@@ -14,87 +14,87 @@ var (
 	DefaultRetryMaxInterval = time.Second * 15
 	// DefaultRetryTimeout default duration of each stream-listening job provisioning on failures.
 	DefaultRetryTimeout = time.Second * 15
-	// DefaultMaxHandlerPoolSize default pool size of goroutines for ListenerNode's Listener(s) / ListenerFunc(s) executions.
+	// DefaultMaxHandlerPoolSize default pool size of goroutines for ReaderNode's Reader(s) / ReaderHandleFunc(s) executions.
 	DefaultMaxHandlerPoolSize = 10
 )
 
-type listenerSupervisor struct {
-	parentHub            *Hub
-	listenerRegistry     listenerRegistry
-	baseListenerNodeOpts []ListenerNodeOption
+type readerSupervisor struct {
+	parentHub          *Hub
+	readerRegistry     readerRegistry
+	baseReaderNodeOpts []ReaderNodeOption
 }
 
-func newListenerSupervisor(h *Hub) *listenerSupervisor {
-	return &listenerSupervisor{
-		parentHub:            h,
-		listenerRegistry:     make([]ListenerNode, 0),
-		baseListenerNodeOpts: h.ListenerBaseOptions,
+func newReaderSupervisor(h *Hub) *readerSupervisor {
+	return &readerSupervisor{
+		parentHub:          h,
+		readerRegistry:     make([]ReaderNode, 0),
+		baseReaderNodeOpts: h.ReaderBaseOptions,
 	}
 }
 
 // forkNode registers a new stream-listening node for later scheduling.
-func (s *listenerSupervisor) forkNode(stream string, opts ...ListenerNodeOption) {
+func (s *readerSupervisor) forkNode(stream string, opts ...ReaderNodeOption) {
 	if stream == "" {
 		return
 	}
-	baseOpts := listenerNodeOptions{
+	baseOpts := readerNodeOptions{
 		concurrencyLevel:     DefaultConcurrencyLevel,
 		retryInitialInterval: DefaultRetryInitialInterval,
 		retryMaxInterval:     DefaultRetryMaxInterval,
 		retryTimeout:         DefaultRetryTimeout,
-		driver:               s.parentHub.ListenerDriver,
+		driver:               s.parentHub.Reader,
 		maxHandlerPoolSize:   DefaultMaxHandlerPoolSize,
 	}
-	for _, o := range s.baseListenerNodeOpts {
+	for _, o := range s.baseReaderNodeOpts {
 		o.apply(&baseOpts)
 	}
 	for _, o := range opts {
 		o.apply(&baseOpts)
 	}
 
-	node := &ListenerNode{
+	node := &ReaderNode{
 		Stream:                stream,
-		HandlerFunc:           s.getFallbackListenerFunc(baseOpts),
+		HandlerFunc:           s.ReaderHandleFunc(baseOpts),
 		Group:                 baseOpts.group,
 		ProviderConfiguration: baseOpts.providerConfiguration,
 		ConcurrencyLevel:      baseOpts.concurrencyLevel,
 		RetryInitialInterval:  baseOpts.retryInitialInterval,
 		RetryMaxInterval:      baseOpts.retryMaxInterval,
 		RetryTimeout:          baseOpts.retryTimeout,
-		ListenerDriver:        baseOpts.driver,
+		Reader:                baseOpts.driver,
 		MaxHandlerPoolSize:    baseOpts.maxHandlerPoolSize,
 	}
 	node.HandlerFunc = s.attachDefaultBehaviours(node)
-	s.listenerRegistry = append(s.listenerRegistry, *node)
+	s.readerRegistry = append(s.readerRegistry, *node)
 }
 
-func (s *listenerSupervisor) getFallbackListenerFunc(baseOpts listenerNodeOptions) ListenerFunc {
-	if baseOpts.listenerFunc == nil && baseOpts.listener == nil {
+func (s *readerSupervisor) ReaderHandleFunc(baseOpts readerNodeOptions) ReaderHandleFunc {
+	if baseOpts.readerFunc == nil && baseOpts.readerHandler == nil {
 		return nil
 	}
 
-	var handler ListenerFunc
-	if baseOpts.listener != nil {
-		handler = baseOpts.listener.Listen
-	} else if baseOpts.listenerFunc != nil {
-		handler = baseOpts.listenerFunc
+	var handler ReaderHandleFunc
+	if baseOpts.readerHandler != nil {
+		handler = baseOpts.readerHandler.Read
+	} else if baseOpts.readerFunc != nil {
+		handler = baseOpts.readerFunc
 	}
 	return handler
 }
 
-func (s *listenerSupervisor) attachDefaultBehaviours(node *ListenerNode) ListenerFunc {
+func (s *readerSupervisor) attachDefaultBehaviours(node *ReaderNode) ReaderHandleFunc {
 	if node.HandlerFunc == nil {
 		return nil
 	}
-	for _, b := range s.parentHub.ListenerBehaviours {
+	for _, b := range s.parentHub.ReaderBehaviours {
 		node.HandlerFunc = b(node, s.parentHub, node.HandlerFunc)
 	}
 	return node.HandlerFunc
 }
 
-// startNodes boots up all nodes from the listenerSupervisor's ListenerRegistry.
-func (s *listenerSupervisor) startNodes(ctx context.Context) {
-	for _, node := range s.listenerRegistry {
+// startNodes boots up all nodes from the readerSupervisor's ReaderRegistry.
+func (s *readerSupervisor) startNodes(ctx context.Context) {
+	for _, node := range s.readerRegistry {
 		node.start(ctx)
 	}
 }

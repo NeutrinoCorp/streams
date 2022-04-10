@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/neutrinocorp/streamhub"
-	shmemory "github.com/neutrinocorp/streamhub/streamhub-memory"
+	"github.com/neutrinocorp/streamhub/driver/shmemory"
 )
 
 type transactionRegistered struct {
@@ -35,7 +35,7 @@ func main() {
 	b := shmemory.NewBus(0)
 	hub := streamhub.NewHub(
 		streamhub.WithWriter(shmemory.NewWriter(b)),
-		streamhub.WithListenerDriver(shmemory.NewListener(b)))
+		streamhub.WithReader(shmemory.NewReader(b)))
 
 	registerStream(hub)
 	registerListeners(hub)
@@ -58,8 +58,8 @@ func registerStream(h *streamhub.Hub) {
 }
 
 func registerListeners(h *streamhub.Hub) {
-	_ = h.Listen(transactionRegistered{},
-		streamhub.WithListenerFunc(func(ctx context.Context, message streamhub.Message) error {
+	_ = h.Read(transactionRegistered{},
+		streamhub.WithHandlerFunc(func(ctx context.Context, message streamhub.Message) error {
 			atomic.AddUint64(&totalProcessedMessages, 1)
 			return nil
 		}))

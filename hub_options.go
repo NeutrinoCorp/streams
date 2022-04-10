@@ -1,14 +1,14 @@
 package streamhub
 
 type hubOptions struct {
-	instanceName       string
-	writer             Writer
-	marshaler          Marshaler
-	idFactory          IDFactoryFunc
-	schemaRegistry     SchemaRegistry
-	driver             ListenerDriver
-	listenerBehaviours []ListenerBehaviour
-	listenerBaseOpts   []ListenerNodeOption
+	instanceName     string
+	writer           Writer
+	marshaler        Marshaler
+	idFactory        IDFactoryFunc
+	schemaRegistry   SchemaRegistry
+	driver           Reader
+	readerBehaviours []ReaderBehaviour
+	readerBaseOpts   []ReaderNodeOption
 }
 
 // HubOption enables configuration of a Hub instance.
@@ -57,17 +57,17 @@ func WithMarshaler(m Marshaler) HubOption {
 	return marshalerOption{Marshaler: m}
 }
 
-type listenerDriverOption struct {
-	Driver ListenerDriver
+type readerOption struct {
+	Driver Reader
 }
 
-func (o listenerDriverOption) apply(opts *hubOptions) {
+func (o readerOption) apply(opts *hubOptions) {
 	opts.driver = o.Driver
 }
 
-// WithListenerDriver sets the default listener driver of a Hub instance.
-func WithListenerDriver(d ListenerDriver) HubOption {
-	return listenerDriverOption{Driver: d}
+// WithReader sets the default reader driver of a Hub instance.
+func WithReader(d Reader) HubOption {
+	return readerOption{Driver: d}
 }
 
 type idFactoryOption struct {
@@ -96,29 +96,29 @@ func WithSchemaRegistry(r SchemaRegistry) HubOption {
 	return schemaRegistryOption{SchemaRegistry: r}
 }
 
-type listenerBehavioursOption struct {
-	Behaviours []ListenerBehaviour
+type readerBehavioursOption struct {
+	Behaviours []ReaderBehaviour
 }
 
-func (o listenerBehavioursOption) apply(opts *hubOptions) {
-	opts.listenerBehaviours = o.Behaviours
+func (o readerBehavioursOption) apply(opts *hubOptions) {
+	opts.readerBehaviours = o.Behaviours
 }
 
-// WithListenerBehaviours sets a list of ListenerBehaviour of a Hub instance ready to be executed by every stream-listening job's
-// ListenerFunc or Listener component.
-func WithListenerBehaviours(b ...ListenerBehaviour) HubOption {
-	return listenerBehavioursOption{Behaviours: b}
+// WithReaderBehaviours sets a list of ReaderBehaviour of a Hub instance ready to be executed by every
+// stream-reading job's ReaderFunc or Reader component.
+func WithReaderBehaviours(b ...ReaderBehaviour) HubOption {
+	return readerBehavioursOption{Behaviours: b}
 }
 
-type listenerBaseOptions struct {
-	BaseOpts []ListenerNodeOption
+type readerBaseOptions struct {
+	BaseOpts []ReaderNodeOption
 }
 
-func (o listenerBaseOptions) apply(opts *hubOptions) {
-	opts.listenerBaseOpts = o.BaseOpts
+func (o readerBaseOptions) apply(opts *hubOptions) {
+	opts.readerBaseOpts = o.BaseOpts
 }
 
-// WithListenerBaseOptions sets a list of ListenerNodeOption of a Hub instance used as global options for each listener node
-func WithListenerBaseOptions(opts ...ListenerNodeOption) HubOption {
-	return listenerBaseOptions{BaseOpts: opts}
+// WithReaderBaseOptions sets a list of ReaderNodeOption of a Hub instance used as global options for each reader node.
+func WithReaderBaseOptions(opts ...ReaderNodeOption) HubOption {
+	return readerBaseOptions{BaseOpts: opts}
 }

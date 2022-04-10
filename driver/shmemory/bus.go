@@ -1,4 +1,4 @@
-package streamhub_memory
+package shmemory
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 type Bus struct {
 	messageBuffer chan streamhub.Message
 	// key: Stream name | value: List of handlers
-	messageHandlers map[string][]streamhub.ListenerTask
+	messageHandlers map[string][]streamhub.ReaderTask
 
 	startedBus    bool
 	maxGoroutines int
@@ -23,16 +23,16 @@ func NewBus(maxGoroutines int) *Bus {
 	}
 	return &Bus{
 		messageBuffer:   make(chan streamhub.Message),
-		messageHandlers: map[string][]streamhub.ListenerTask{},
+		messageHandlers: map[string][]streamhub.ReaderTask{},
 		startedBus:      false,
 		maxGoroutines:   maxGoroutines,
 	}
 }
 
-func (b *Bus) registerHandler(task streamhub.ListenerTask) {
+func (b *Bus) registerHandler(task streamhub.ReaderTask) {
 	handlers, ok := b.messageHandlers[task.Stream]
 	if !ok {
-		handlers = make([]streamhub.ListenerTask, 0)
+		handlers = make([]streamhub.ReaderTask, 0)
 	}
 
 	handlers = append(handlers, task)
@@ -63,7 +63,7 @@ func (b *Bus) start(ctx context.Context) {
 			case sem <- struct{}{}:
 			}
 			for _, t := range b.messageHandlers[msg.Stream] {
-				go func(task streamhub.ListenerTask, message streamhub.Message) {
+				go func(task streamhub.ReaderTask, message streamhub.Message) {
 					scopedCtx, cancel := context.WithTimeout(ctx, task.Timeout)
 					defer cancel()
 					defer func() { <-sem }()

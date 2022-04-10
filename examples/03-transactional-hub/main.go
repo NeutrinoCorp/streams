@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/neutrinocorp/streamhub"
-	shmemory "github.com/neutrinocorp/streamhub/streamhub-memory"
+	"github.com/neutrinocorp/streamhub/driver/shmemory"
 )
 
 type studentSignedUp struct {
@@ -29,7 +29,8 @@ type doSomethingOnAggregate struct {
 	Foo string `json:"foo"`
 }
 
-var loggingListener streamhub.ListenerBehaviour = func(node *streamhub.ListenerNode, hub *streamhub.Hub, next streamhub.ListenerFunc) streamhub.ListenerFunc {
+var loggingListener streamhub.ReaderBehaviour = func(node *streamhub.ReaderNode, hub *streamhub.Hub,
+	next streamhub.ReaderHandleFunc) streamhub.ReaderHandleFunc {
 	log.Printf("[RECEIVED] %s | host: %s", node.Stream, hub.InstanceName)
 	log.Printf("[RECEIVED] %s | group: %s", node.Stream, node.Group)
 	return func(ctx context.Context, message streamhub.Message) error {
@@ -44,9 +45,9 @@ func main() {
 	inMemBus := shmemory.NewBus(0)
 	hub := streamhub.NewHub(
 		streamhub.WithIDFactory(streamhub.RandInt64Factory),
-		streamhub.WithListenerBehaviours(loggingListener),
+		streamhub.WithReaderBehaviours(loggingListener),
 		streamhub.WithWriter(shmemory.NewWriter(inMemBus)),
-		streamhub.WithListenerDriver(shmemory.NewListener(inMemBus)))
+		streamhub.WithReader(shmemory.NewReader(inMemBus)))
 
 	hub.RegisterStream(studentSignedUp{}, streamhub.StreamMetadata{
 		Stream: "student-signed_up",
@@ -65,9 +66,9 @@ func main() {
 		Stream: "do_something-on-aggregate",
 	})
 
-	_ = hub.Listen(studentSignedUp{},
+	_ = hub.Read(studentSignedUp{},
 		streamhub.WithGroup("example-job-on-student-signed_up"),
-		streamhub.WithListenerFunc(func(ctx context.Context, message streamhub.Message) error {
+		streamhub.WithHandlerFunc(func(ctx context.Context, message streamhub.Message) error {
 			data, ok := message.DecodedData.(studentSignedUp)
 			if !ok {
 				log.Print("failed to cast reflection-message")
@@ -79,9 +80,9 @@ func main() {
 			})
 		}))
 
-	_ = hub.Listen(studentLoggedIn{},
+	_ = hub.Read(studentLoggedIn{},
 		streamhub.WithGroup("job-on-student-logged_in"),
-		streamhub.WithListenerFunc(func(ctx context.Context, message streamhub.Message) error {
+		streamhub.WithHandlerFunc(func(ctx context.Context, message streamhub.Message) error {
 			data, ok := message.DecodedData.(studentLoggedIn)
 			if !ok {
 				log.Print("failed to cast logged in reflection-message")
@@ -92,9 +93,9 @@ func main() {
 			})
 		}))
 
-	_ = hub.Listen(aggregateMetricOnStudent{},
+	_ = hub.Read(aggregateMetricOnStudent{},
 		streamhub.WithGroup("aggregate-on-student-logged_in"),
-		streamhub.WithListenerFunc(func(ctx context.Context, message streamhub.Message) error {
+		streamhub.WithHandlerFunc(func(ctx context.Context, message streamhub.Message) error {
 			data, ok := message.DecodedData.(aggregateMetricOnStudent)
 			if !ok {
 				log.Print("failed")
@@ -105,14 +106,14 @@ func main() {
 			})
 		}))
 
-	_ = hub.Listen(doSomethingOnAggregate{},
-		streamhub.WithListenerFunc(func(ctx context.Context, message streamhub.Message) error {
+	_ = hub.Read(doSomethingOnAggregate{},
+		streamhub.WithHandlerFunc(func(ctx context.Context, message streamhub.Message) error {
 			return nil
 		}))
 
-	_ = hub.Listen(doSomethingOnAggregate{},
+	_ = hub.Read(doSomethingOnAggregate{},
 		streamhub.WithGroup("foo-group"),
-		streamhub.WithListenerFunc(func(ctx context.Context, message streamhub.Message) error {
+		streamhub.WithHandlerFunc(func(ctx context.Context, message streamhub.Message) error {
 			return nil
 		}))
 

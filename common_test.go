@@ -10,19 +10,19 @@ import (
 
 type listenerDriverNoop struct{}
 
-var _ streamhub.ListenerDriver = listenerDriverNoop{}
+var _ streamhub.Reader = listenerDriverNoop{}
 
-// ExecuteTask the no-operation implementation of ListenerDriver
-func (l listenerDriverNoop) ExecuteTask(_ context.Context, _ streamhub.ListenerTask) error {
+// ExecuteTask the no-operation implementation of Reader
+func (l listenerDriverNoop) ExecuteTask(_ context.Context, _ streamhub.ReaderTask) error {
 	return nil
 }
 
 type listenerDriverNoopGoroutine struct{}
 
-var _ streamhub.ListenerDriver = listenerDriverNoopGoroutine{}
+var _ streamhub.Reader = listenerDriverNoopGoroutine{}
 
-// ExecuteTask the no-operation implementation of ListenerDriver inside a goroutine
-func (l listenerDriverNoopGoroutine) ExecuteTask(_ context.Context, _ streamhub.ListenerTask) error {
+// ExecuteTask the no-operation implementation of Reader inside a goroutine
+func (l listenerDriverNoopGoroutine) ExecuteTask(_ context.Context, _ streamhub.ReaderTask) error {
 	go func() {}()
 	return nil
 }
@@ -57,7 +57,7 @@ func (h hashing64AlgorithmFailingNoop) Sum64() uint64 {
 
 type writerNoopHook struct {
 	onWrite      func(context.Context, streamhub.Message) error
-	onWriteBatch func(context.Context, ...streamhub.Message) error
+	onWriteBatch func(context.Context, ...streamhub.Message) (uint32, error)
 }
 
 var _ streamhub.Writer = writerNoopHook{}
@@ -69,9 +69,9 @@ func (p writerNoopHook) Write(ctx context.Context, message streamhub.Message) er
 	return nil
 }
 
-func (p writerNoopHook) WriteBatch(ctx context.Context, messages ...streamhub.Message) error {
+func (p writerNoopHook) WriteBatch(ctx context.Context, messages ...streamhub.Message) (uint32, error) {
 	if p.onWriteBatch != nil {
 		return p.onWriteBatch(ctx, messages...)
 	}
-	return nil
+	return 0, nil
 }

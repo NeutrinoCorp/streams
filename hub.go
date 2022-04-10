@@ -9,17 +9,17 @@ var DefaultHubInstanceName = "com.streamhub"
 
 // Hub is the main component which enables interactions between several systems through the usage of streams.
 type Hub struct {
-	InstanceName        string
-	StreamRegistry      StreamRegistry
-	Writer              Writer
-	Marshaler           Marshaler
-	IDFactory           IDFactoryFunc
-	SchemaRegistry      SchemaRegistry
-	ListenerDriver      ListenerDriver
-	ListenerBehaviours  []ListenerBehaviour
-	ListenerBaseOptions []ListenerNodeOption
+	InstanceName      string
+	StreamRegistry    StreamRegistry
+	Writer            Writer
+	Marshaler         Marshaler
+	IDFactory         IDFactoryFunc
+	SchemaRegistry    SchemaRegistry
+	Reader            Reader
+	ReaderBehaviours  []ReaderBehaviour
+	ReaderBaseOptions []ReaderNodeOption
 
-	listenerSupervisor *listenerSupervisor
+	readerSupervisor *readerSupervisor
 }
 
 // NewHub allocates a new Hub
@@ -29,28 +29,28 @@ func NewHub(opts ...HubOption) *Hub {
 		o.apply(&baseOpts)
 	}
 	h := &Hub{
-		StreamRegistry:      StreamRegistry{},
-		InstanceName:        baseOpts.instanceName,
-		Marshaler:           baseOpts.marshaler,
-		Writer:              baseOpts.writer,
-		IDFactory:           baseOpts.idFactory,
-		SchemaRegistry:      baseOpts.schemaRegistry,
-		ListenerDriver:      baseOpts.driver,
-		ListenerBehaviours:  append(ListenerBaseBehaviours, baseOpts.listenerBehaviours...),
-		ListenerBaseOptions: baseOpts.listenerBaseOpts,
+		StreamRegistry:    StreamRegistry{},
+		InstanceName:      baseOpts.instanceName,
+		Marshaler:         baseOpts.marshaler,
+		Writer:            baseOpts.writer,
+		IDFactory:         baseOpts.idFactory,
+		SchemaRegistry:    baseOpts.schemaRegistry,
+		Reader:            baseOpts.driver,
+		ReaderBehaviours:  append(ReaderBaseBehaviours, baseOpts.readerBehaviours...),
+		ReaderBaseOptions: baseOpts.readerBaseOpts,
 	}
-	h.listenerSupervisor = newListenerSupervisor(h)
+	h.readerSupervisor = newReaderSupervisor(h)
 	return h
 }
 
 // defines the fallback options of a Hub instance.
 func newHubDefaults() hubOptions {
 	return hubOptions{
-		instanceName:     DefaultHubInstanceName,
-		writer:           NoopWriter,
-		marshaler:        JSONMarshaler{},
-		idFactory:        UuidIdFactory,
-		listenerBaseOpts: make([]ListenerNodeOption, 0),
+		instanceName:   DefaultHubInstanceName,
+		writer:         NoopWriter,
+		marshaler:      JSONMarshaler{},
+		idFactory:      UuidIdFactory,
+		readerBaseOpts: make([]ReaderNodeOption, 0),
 	}
 }
 
@@ -67,27 +67,27 @@ func (h *Hub) RegisterStreamByString(messageType string, metadata StreamMetadata
 	h.StreamRegistry.SetByString(messageType, metadata)
 }
 
-// Listen registers a new stream-listening background job.
+// Read registers a new stream-listening background job.
 //
 // If listening to a Google's Protocol Buffer message, DO NOT use a pointer as message schema
 // to avoid marshaling problems
-func (h *Hub) Listen(message interface{}, opts ...ListenerNodeOption) error {
+func (h *Hub) Read(message interface{}, opts ...ReaderNodeOption) error {
 	metadata, err := h.StreamRegistry.Get(message)
 	if err != nil {
 		return err
 	}
-	h.ListenByStreamKey(metadata.Stream, opts...)
+	h.ReadByStreamKey(metadata.Stream, opts...)
 	return nil
 }
 
-// ListenByStreamKey registers a new stream-listening background job using the raw stream identifier (e.g. topic name).
-func (h *Hub) ListenByStreamKey(stream string, opts ...ListenerNodeOption) {
-	h.listenerSupervisor.forkNode(stream, opts...)
+// ReadByStreamKey registers a new stream-listening background job using the raw stream identifier (e.g. topic name).
+func (h *Hub) ReadByStreamKey(stream string, opts ...ReaderNodeOption) {
+	h.readerSupervisor.forkNode(stream, opts...)
 }
 
 // Start initiates all daemons (e.g. stream-listening jobs) processes
 func (h *Hub) Start(ctx context.Context) {
-	h.listenerSupervisor.startNodes(ctx)
+	h.readerSupervisor.startNodes(ctx)
 }
 
 // Write inserts a message into a stream assigned to the message in the StreamRegistry in order to propagate the
@@ -108,7 +108,7 @@ func (h *Hub) Write(ctx context.Context, message interface{}) error {
 // Uses given context to inject correlation and causation IDs.
 //
 // If an item from the batch fails, other items will fail too
-func (h *Hub) WriteBatch(ctx context.Context, messages ...interface{}) error {
+func (h *Hub) WriteBatch(ctx context.Context, messages ...interface{}) (uint32, error) {
 	var (
 		metadata               StreamMetadata
 		transportMessageBuffer = make([]Message, 0, len(messages))
@@ -118,11 +118,11 @@ func (h *Hub) WriteBatch(ctx context.Context, messages ...interface{}) error {
 	for _, msg := range messages {
 		metadata, err = h.StreamRegistry.Get(msg)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		transportMessage, err = h.buildTransportMessage(ctx, metadata, msg)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		transportMessageBuffer = append(transportMessageBuffer, transportMessage)
 	}
@@ -151,7 +151,7 @@ type WriteByMessageKeyBatchItems map[string]interface{}
 // Uses given context to inject correlation and causation IDs.
 //
 // If an item from the batch fails, other items will fail too
-func (h *Hub) WriteByMessageKeyBatch(ctx context.Context, items WriteByMessageKeyBatchItems) error {
+func (h *Hub) WriteByMessageKeyBatch(ctx context.Context, items WriteByMessageKeyBatchItems) (uint32, error) {
 	var (
 		metadata               StreamMetadata
 		transportMessageBuffer = make([]Message, 0, len(items))
@@ -161,11 +161,11 @@ func (h *Hub) WriteByMessageKeyBatch(ctx context.Context, items WriteByMessageKe
 	for messageKey, msg := range items {
 		metadata, err = h.StreamRegistry.GetByString(messageKey)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		transportMessage, err = h.buildTransportMessage(ctx, metadata, msg)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		transportMessageBuffer = append(transportMessageBuffer, transportMessage)
 	}
@@ -243,9 +243,9 @@ func (h *Hub) WriteRawMessage(ctx context.Context, message Message) error {
 //
 // The whole batch will be passed to the underlying Writer driver implementation as every driver has its own way to
 // deal with batches
-func (h *Hub) WriteRawMessageBatch(ctx context.Context, messages ...Message) error {
+func (h *Hub) WriteRawMessageBatch(ctx context.Context, messages ...Message) (uint32, error) {
 	if h.Writer == nil {
-		return ErrMissingWriterDriver
+		return 0, ErrMissingWriterDriver
 	}
 	return h.Writer.WriteBatch(ctx, messages...)
 }

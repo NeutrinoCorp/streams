@@ -34,13 +34,13 @@ func TestWithMarshaler(t *testing.T) {
 	assert.IsType(t, streamhub.JSONMarshaler{}, hub.Marshaler)
 }
 
-func TestWithListenerDriver(t *testing.T) {
+func TestWithReader(t *testing.T) {
 	hub := streamhub.NewHub()
-	assert.Empty(t, hub.ListenerDriver)
+	assert.Empty(t, hub.Reader)
 
 	hub = streamhub.NewHub(
-		streamhub.WithListenerDriver(listenerDriverNoop{}))
-	assert.IsType(t, listenerDriverNoop{}, hub.ListenerDriver)
+		streamhub.WithReader(listenerDriverNoop{}))
+	assert.IsType(t, listenerDriverNoop{}, hub.Reader)
 }
 
 func TestWithIDFactory(t *testing.T) {
@@ -61,26 +61,27 @@ func TestWithSchemaRegistry(t *testing.T) {
 	assert.IsType(t, streamhub.NoopSchemaRegistry{}, hub.SchemaRegistry)
 }
 
-func TestWithListenerBehaviours(t *testing.T) {
+func TestWithReaderBehaviours(t *testing.T) {
 	hub := streamhub.NewHub()
-	assert.NotNil(t, hub.ListenerBehaviours)
+	assert.NotNil(t, hub.ReaderBehaviours)
 
-	totalDefaultBehaviours := len(hub.ListenerBehaviours)
+	totalDefaultBehaviours := len(hub.ReaderBehaviours)
 	hub = streamhub.NewHub(
-		streamhub.WithListenerBehaviours(func(node *streamhub.ListenerNode, hub *streamhub.Hub, next streamhub.ListenerFunc) streamhub.ListenerFunc {
+		streamhub.WithReaderBehaviours(func(node *streamhub.ReaderNode, hub *streamhub.Hub,
+			next streamhub.ReaderHandleFunc) streamhub.ReaderHandleFunc {
 			return next
 		}))
 	// verify if no default behaviour was removed
-	assert.Equal(t, totalDefaultBehaviours+1, len(hub.ListenerBehaviours))
+	assert.Equal(t, totalDefaultBehaviours+1, len(hub.ReaderBehaviours))
 }
 
-func TestWithListenerBaseOptions(t *testing.T) {
+func TestWithReaderBaseOptions(t *testing.T) {
 	hub := streamhub.NewHub()
-	assert.NotNil(t, hub.ListenerBaseOptions)
+	assert.NotNil(t, hub.ReaderBaseOptions)
 
-	totalDefaultOpts := len(hub.ListenerBaseOptions)
+	totalDefaultOpts := len(hub.ReaderBaseOptions)
 	hub = streamhub.NewHub(
-		streamhub.WithListenerBaseOptions(streamhub.WithGroup("foo")))
+		streamhub.WithReaderBaseOptions(streamhub.WithGroup("foo")))
 	// verify if no default behaviour was removed
-	assert.Equal(t, totalDefaultOpts+1, len(hub.ListenerBaseOptions))
+	assert.Equal(t, totalDefaultOpts+1, len(hub.ReaderBaseOptions))
 }

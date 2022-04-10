@@ -12,16 +12,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestListenerNodeHandlerBehaviour_Retry(t *testing.T) {
-	var h ListenerFunc = func(ctx context.Context, message Message) error {
+func TestReaderNodeHandlerBehaviour_Retry(t *testing.T) {
+	var h ReaderHandleFunc = func(ctx context.Context, message Message) error {
 		return errors.New("generic error")
 	}
-	baseOpts := &ListenerNode{
+	baseOpts := &ReaderNode{
 		RetryInitialInterval: time.Millisecond,
 		RetryMaxInterval:     time.Millisecond * 10,
 		RetryTimeout:         time.Millisecond * 2,
 	}
-	h = retryListenerBehaviour(baseOpts, nil, h)
+	h = retryReaderBehaviour(baseOpts, nil, h)
 	defer func(startTime time.Time) {
 		retryTime := time.Since(startTime)
 		assert.GreaterOrEqual(t, time.Millisecond*3, retryTime)
@@ -34,8 +34,8 @@ type fooMessage struct {
 	Hello string `json:"hello"`
 }
 
-func TestListenerNodeHandlerBehaviour_Unmarshal(t *testing.T) {
-	var h ListenerFunc = func(ctx context.Context, message Message) error {
+func TestReaderNodeHandlerBehaviour_Unmarshal(t *testing.T) {
+	var h ReaderHandleFunc = func(ctx context.Context, message Message) error {
 		// streamhub now passes decoded data as pointer
 		// This is caused by the usage of the reflect2 package and the new protobuf implementation.
 		//
@@ -51,7 +51,7 @@ func TestListenerNodeHandlerBehaviour_Unmarshal(t *testing.T) {
 	hub := NewHub(WithSchemaRegistry(InMemorySchemaRegistry{
 		"foo": "foobarbaz",
 	}))
-	h = unmarshalListenerBehaviour(&ListenerNode{}, hub, h)
+	h = unmarshalReaderBehaviour(&ReaderNode{}, hub, h)
 
 	baseMsg := Message{
 		Stream: "foo-stream",
@@ -89,14 +89,14 @@ func TestListenerNodeHandlerBehaviour_Unmarshal(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func BenchmarkListenerNodeHandlerBehaviour_Unmarshal(b *testing.B) {
-	var h ListenerFunc = func(ctx context.Context, message Message) error {
+func BenchmarkReaderNodeHandlerBehaviour_Unmarshal(b *testing.B) {
+	var h ReaderHandleFunc = func(ctx context.Context, message Message) error {
 		return nil
 	}
 	hub := NewHub(WithSchemaRegistry(InMemorySchemaRegistry{
 		"foo": "foobarbaz",
 	}))
-	h = unmarshalListenerBehaviour(&ListenerNode{}, hub, h)
+	h = unmarshalReaderBehaviour(&ReaderNode{}, hub, h)
 	hub.StreamRegistry.SetByString("foo", StreamMetadata{
 		Stream:               "foo-stream",
 		SchemaDefinitionName: "foo",
@@ -117,26 +117,26 @@ func BenchmarkListenerNodeHandlerBehaviour_Unmarshal(b *testing.B) {
 	}
 }
 
-func TestListenerNodeHandlerBehaviour_GroupInjector(t *testing.T) {
-	var h ListenerFunc = func(ctx context.Context, message Message) error {
+func TestReaderNodeHandlerBehaviour_GroupInjector(t *testing.T) {
+	var h ReaderHandleFunc = func(ctx context.Context, message Message) error {
 		assert.Equal(t, "foo", message.GroupName)
 		return nil
 	}
-	baseOpts := &ListenerNode{
+	baseOpts := &ReaderNode{
 		Group: "foo",
 	}
-	h = injectGroupListenerBehaviour(baseOpts, nil, h)
+	h = injectGroupReaderBehaviour(baseOpts, nil, h)
 	err := h(context.Background(), Message{})
 	assert.NoError(t, err)
 }
 
-func TestListenerNodeHandlerBehaviour_TxInjector(t *testing.T) {
+func TestReaderNodeHandlerBehaviour_TxInjector(t *testing.T) {
 	const (
 		correlationId = "1"
 		id            = "abc"
 	)
 
-	var h ListenerFunc = func(ctx context.Context, message Message) error {
+	var h ReaderHandleFunc = func(ctx context.Context, message Message) error {
 		scopedCorr, ok := ctx.Value(ContextCorrelationID).(MessageContextKey)
 		assert.True(t, ok)
 		assert.Equal(t, correlationId, string(scopedCorr))
@@ -148,8 +148,8 @@ func TestListenerNodeHandlerBehaviour_TxInjector(t *testing.T) {
 		assert.Equal(t, correlationId, message.CausationID)
 		return nil
 	}
-	baseOpts := &ListenerNode{}
-	h = injectTxIDsListenerBehaviour(baseOpts, nil, h)
+	baseOpts := &ReaderNode{}
+	h = injectTxIDsReaderBehaviour(baseOpts, nil, h)
 	err := h(context.Background(), Message{
 		ID:            id,
 		CorrelationID: correlationId,

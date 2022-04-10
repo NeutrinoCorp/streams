@@ -1,4 +1,4 @@
-package streamhub_memory
+package shmemory
 
 import (
 	"context"
@@ -28,11 +28,13 @@ func (p *Writer) Write(ctx context.Context, message streamhub.Message) error {
 }
 
 // WriteBatch pushes the given set of messages into the internal in-memory Bus
-func (p *Writer) WriteBatch(ctx context.Context, messages ...streamhub.Message) (err error) {
+func (p *Writer) WriteBatch(ctx context.Context, messages ...streamhub.Message) (published uint32, err error) {
 	for _, msg := range messages {
 		if errPub := p.b.write(ctx, msg); errPub != nil {
 			err = errPub
+			continue
 		}
+		published++
 	}
 	return
 }
