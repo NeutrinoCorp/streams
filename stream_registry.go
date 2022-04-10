@@ -1,4 +1,4 @@
-package streamhub
+package streams
 
 import (
 	"errors"
@@ -8,7 +8,7 @@ import (
 )
 
 // ErrMissingStream the requested stream was not found in the StreamRegistry
-var ErrMissingStream = errors.New("streamhub: Missing stream entry in stream registry")
+var ErrMissingStream = errors.New("streams: Missing stream entry in stream registry")
 
 // StreamMetadata contains information of stream messages.
 type StreamMetadata struct {

@@ -1,22 +1,22 @@
-package streamhub_test
+package streams_test
 
 import (
 	"testing"
 
-	"github.com/neutrinocorp/streamhub"
+	"github.com/neutrinocorp/streams"
 	"github.com/stretchr/testify/assert"
 )
 
 var newMessageSuite = []struct {
-	In  streamhub.NewMessageArgs
-	Exp streamhub.Message
+	In  streams.NewMessageArgs
+	Exp streams.Message
 }{
 	{
-		In:  streamhub.NewMessageArgs{},
-		Exp: streamhub.Message{},
+		In:  streams.NewMessageArgs{},
+		Exp: streams.Message{},
 	},
 	{
-		In: streamhub.NewMessageArgs{
+		In: streams.NewMessageArgs{
 			SchemaVersion:        0,
 			Data:                 []byte("foo"),
 			ID:                   "",
@@ -25,25 +25,25 @@ var newMessageSuite = []struct {
 			SchemaDefinitionName: "",
 			ContentType:          "",
 		},
-		Exp: streamhub.Message{
+		Exp: streams.Message{
 			Data: []byte("foo"),
 		},
 	},
 	{
-		In: streamhub.NewMessageArgs{
+		In: streams.NewMessageArgs{
 			SchemaVersion:        0,
 			Data:                 []byte("foo"),
 			ID:                   "123",
-			Source:               "com.streamhub",
+			Source:               "com.streams",
 			Stream:               "",
 			SchemaDefinitionName: "",
 			ContentType:          "application/json",
 		},
-		Exp: streamhub.Message{
+		Exp: streams.Message{
 			ID:              "123",
 			Stream:          "",
-			Source:          "com.streamhub",
-			SpecVersion:     streamhub.CloudEventsSpecVersion,
+			Source:          "com.streams",
+			SpecVersion:     streams.CloudEventsSpecVersion,
 			Type:            "",
 			Data:            []byte("foo"),
 			DataContentType: "application/json",
@@ -52,21 +52,21 @@ var newMessageSuite = []struct {
 		},
 	},
 	{
-		In: streamhub.NewMessageArgs{
+		In: streams.NewMessageArgs{
 			SchemaVersion:        0,
 			Data:                 []byte("foo"),
 			ID:                   "123",
-			Source:               "com.streamhub",
+			Source:               "com.streams",
 			Stream:               "foo-stream",
 			SchemaDefinitionName: "foo_stream",
 			ContentType:          "application/json",
 		},
-		Exp: streamhub.Message{
+		Exp: streams.Message{
 			ID:                "123",
 			Stream:            "foo-stream",
-			Source:            "com.streamhub",
-			SpecVersion:       streamhub.CloudEventsSpecVersion,
-			Type:              "com.streamhub.foo-stream.v0",
+			Source:            "com.streams",
+			SpecVersion:       streams.CloudEventsSpecVersion,
+			Type:              "com.streams.foo-stream.v0",
 			Data:              []byte("foo"),
 			DataContentType:   "application/json",
 			DataSchema:        "foo_stream",
@@ -74,21 +74,21 @@ var newMessageSuite = []struct {
 		},
 	},
 	{
-		In: streamhub.NewMessageArgs{
+		In: streams.NewMessageArgs{
 			SchemaVersion:        4,
 			Data:                 []byte("foo"),
 			ID:                   "123",
-			Source:               "com.streamhub",
+			Source:               "com.streams",
 			Stream:               "foo-stream",
 			SchemaDefinitionName: "foo_stream",
 			ContentType:          "application/json",
 		},
-		Exp: streamhub.Message{
+		Exp: streams.Message{
 			ID:                "123",
 			Stream:            "foo-stream",
-			Source:            "com.streamhub",
-			SpecVersion:       streamhub.CloudEventsSpecVersion,
-			Type:              "com.streamhub.foo-stream.v4",
+			Source:            "com.streams",
+			SpecVersion:       streams.CloudEventsSpecVersion,
+			Type:              "com.streams.foo-stream.v4",
 			Data:              []byte("foo"),
 			DataContentType:   "application/json",
 			DataSchema:        "foo_stream",
@@ -96,22 +96,22 @@ var newMessageSuite = []struct {
 		},
 	},
 	{
-		In: streamhub.NewMessageArgs{
+		In: streams.NewMessageArgs{
 			SchemaVersion:        4,
 			Data:                 []byte("foo"),
 			ID:                   "123",
-			Source:               "com.streamhub",
+			Source:               "com.streams",
 			Stream:               "foo-stream",
 			SchemaDefinitionName: "foo_stream",
 			ContentType:          "application/json",
 			GroupName:            "foo-group",
 		},
-		Exp: streamhub.Message{
+		Exp: streams.Message{
 			ID:                "123",
 			Stream:            "foo-stream",
-			Source:            "com.streamhub",
-			SpecVersion:       streamhub.CloudEventsSpecVersion,
-			Type:              "com.streamhub.foo-stream.v4",
+			Source:            "com.streams",
+			SpecVersion:       streams.CloudEventsSpecVersion,
+			Type:              "com.streams.foo-stream.v4",
 			Data:              []byte("foo"),
 			DataContentType:   "application/json",
 			DataSchema:        "foo_stream",
@@ -120,23 +120,23 @@ var newMessageSuite = []struct {
 		},
 	},
 	{
-		In: streamhub.NewMessageArgs{
+		In: streams.NewMessageArgs{
 			SchemaVersion:        4,
 			Data:                 []byte("foo"),
 			ID:                   "123",
-			Source:               "com.streamhub",
+			Source:               "com.streams",
 			Stream:               "foo-stream",
 			SchemaDefinitionName: "foo_stream",
 			ContentType:          "application/json",
 			GroupName:            "foo-group",
 			Subject:              "foo-sub",
 		},
-		Exp: streamhub.Message{
+		Exp: streams.Message{
 			ID:                "123",
 			Stream:            "foo-stream",
-			Source:            "com.streamhub",
-			SpecVersion:       streamhub.CloudEventsSpecVersion,
-			Type:              "com.streamhub.foo-stream.v4",
+			Source:            "com.streams",
+			SpecVersion:       streams.CloudEventsSpecVersion,
+			Type:              "com.streams.foo-stream.v4",
 			Data:              []byte("foo"),
 			DataContentType:   "application/json",
 			DataSchema:        "foo_stream",
@@ -146,23 +146,23 @@ var newMessageSuite = []struct {
 		},
 	},
 	{
-		In: streamhub.NewMessageArgs{
+		In: streams.NewMessageArgs{
 			SchemaVersion:        4,
 			Data:                 []byte("foo"),
 			ID:                   "123",
-			Source:               "com.streamhub",
-			Stream:               "com.streamhub.foo-stream",
+			Source:               "com.streams",
+			Stream:               "com.streams.foo-stream",
 			SchemaDefinitionName: "foo_stream",
 			ContentType:          "application/json",
 			GroupName:            "foo-group",
 			Subject:              "foo-sub",
 		},
-		Exp: streamhub.Message{
+		Exp: streams.Message{
 			ID:                "123",
-			Stream:            "com.streamhub.foo-stream",
-			Source:            "com.streamhub",
-			SpecVersion:       streamhub.CloudEventsSpecVersion,
-			Type:              "com.streamhub.foo-stream.v4",
+			Stream:            "com.streams.foo-stream",
+			Source:            "com.streams",
+			SpecVersion:       streams.CloudEventsSpecVersion,
+			Type:              "com.streams.foo-stream.v4",
 			Data:              []byte("foo"),
 			DataContentType:   "application/json",
 			DataSchema:        "foo_stream",
@@ -176,11 +176,11 @@ var newMessageSuite = []struct {
 func TestNewMessage(t *testing.T) {
 	for _, tt := range newMessageSuite {
 		t.Run("", func(t *testing.T) {
-			exp := streamhub.NewMessage(tt.In)
+			exp := streams.NewMessage(tt.In)
 			assert.Equal(t, tt.Exp.ID, exp.ID)
 			assert.Equal(t, tt.Exp.Stream, exp.Stream)
 			assert.Equal(t, tt.Exp.Source, exp.Source)
-			assert.Equal(t, streamhub.CloudEventsSpecVersion, exp.SpecVersion)
+			assert.Equal(t, streams.CloudEventsSpecVersion, exp.SpecVersion)
 			if tt.In.Source != "" && tt.In.Stream != "" {
 				assert.Equal(t, tt.Exp.Type, exp.Type)
 			}
@@ -199,11 +199,11 @@ func BenchmarkNewMessage(b *testing.B) {
 	data := []byte("hello there")
 	for i := 0; i < b.N; i++ {
 		b.ReportAllocs()
-		_ = streamhub.NewMessage(streamhub.NewMessageArgs{
+		_ = streams.NewMessage(streams.NewMessageArgs{
 			SchemaVersion:        9,
 			Data:                 data,
 			ID:                   "1",
-			Source:               "com.streamhub",
+			Source:               "com.streams",
 			Stream:               "bar-stream",
 			SchemaDefinitionName: "",
 			ContentType:          "",

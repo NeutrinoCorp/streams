@@ -1,28 +1,28 @@
-package streamhub_test
+package streams_test
 
 import (
 	"context"
 	"errors"
 	"hash"
 
-	"github.com/neutrinocorp/streamhub"
+	"github.com/neutrinocorp/streams"
 )
 
 type listenerDriverNoop struct{}
 
-var _ streamhub.Reader = listenerDriverNoop{}
+var _ streams.Reader = listenerDriverNoop{}
 
 // ExecuteTask the no-operation implementation of Reader
-func (l listenerDriverNoop) ExecuteTask(_ context.Context, _ streamhub.ReaderTask) error {
+func (l listenerDriverNoop) ExecuteTask(_ context.Context, _ streams.ReaderTask) error {
 	return nil
 }
 
 type listenerDriverNoopGoroutine struct{}
 
-var _ streamhub.Reader = listenerDriverNoopGoroutine{}
+var _ streams.Reader = listenerDriverNoopGoroutine{}
 
 // ExecuteTask the no-operation implementation of Reader inside a goroutine
-func (l listenerDriverNoopGoroutine) ExecuteTask(_ context.Context, _ streamhub.ReaderTask) error {
+func (l listenerDriverNoopGoroutine) ExecuteTask(_ context.Context, _ streams.ReaderTask) error {
 	go func() {}()
 	return nil
 }
@@ -56,20 +56,20 @@ func (h hashing64AlgorithmFailingNoop) Sum64() uint64 {
 }
 
 type writerNoopHook struct {
-	onWrite      func(context.Context, streamhub.Message) error
-	onWriteBatch func(context.Context, ...streamhub.Message) (uint32, error)
+	onWrite      func(context.Context, streams.Message) error
+	onWriteBatch func(context.Context, ...streams.Message) (uint32, error)
 }
 
-var _ streamhub.Writer = writerNoopHook{}
+var _ streams.Writer = writerNoopHook{}
 
-func (p writerNoopHook) Write(ctx context.Context, message streamhub.Message) error {
+func (p writerNoopHook) Write(ctx context.Context, message streams.Message) error {
 	if p.onWrite != nil {
 		return p.onWrite(ctx, message)
 	}
 	return nil
 }
 
-func (p writerNoopHook) WriteBatch(ctx context.Context, messages ...streamhub.Message) (uint32, error) {
+func (p writerNoopHook) WriteBatch(ctx context.Context, messages ...streams.Message) (uint32, error) {
 	if p.onWriteBatch != nil {
 		return p.onWriteBatch(ctx, messages...)
 	}

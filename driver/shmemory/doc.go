@@ -1,2 +1,2 @@
-// Package streamhub-memory is the In-Memory implementation for Streamhub-based programs.
+// Package streams-memory is the In-Memory implementation for Streamhub-based programs.
 package shmemory

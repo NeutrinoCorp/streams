@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/neutrinocorp/streamhub"
-	"github.com/neutrinocorp/streamhub/driver/shmemory"
+	"github.com/neutrinocorp/streams"
+	"github.com/neutrinocorp/streams/driver/shmemory"
 )
 
 type studentSignedUp struct {
@@ -16,20 +16,20 @@ type studentSignedUp struct {
 
 func main() {
 	inMemBus := shmemory.NewBus(0)
-	hub := streamhub.NewHub(
-		streamhub.WithWriter(shmemory.NewWriter(inMemBus)),
-		streamhub.WithReader(shmemory.NewReader(inMemBus)),
-		streamhub.WithSchemaRegistry(setupSchemaRegistry()),
-		streamhub.WithMarshaler(streamhub.NewAvroMarshaler()))
-	hub.RegisterStream(studentSignedUp{}, streamhub.StreamMetadata{
+	hub := streams.NewHub(
+		streams.WithWriter(shmemory.NewWriter(inMemBus)),
+		streams.WithReader(shmemory.NewReader(inMemBus)),
+		streams.WithSchemaRegistry(setupSchemaRegistry()),
+		streams.WithMarshaler(streams.NewAvroMarshaler()))
+	hub.RegisterStream(studentSignedUp{}, streams.StreamMetadata{
 		Stream:               "student-signed_up",
 		SchemaDefinitionName: "student-signed_up",
 		SchemaVersion:        1,
 	})
 
 	_ = hub.Read(studentSignedUp{},
-		streamhub.WithGroup("example-job-on-student-signed_up"),
-		streamhub.WithHandlerFunc(func(ctx context.Context, message streamhub.Message) error {
+		streams.WithGroup("example-job-on-student-signed_up"),
+		streams.WithHandlerFunc(func(ctx context.Context, message streams.Message) error {
 			log.Printf("message decoded at reflection-based: %+v", message.DecodedData)
 			return nil
 		}))
@@ -48,8 +48,8 @@ func main() {
 	time.Sleep(time.Second * 10)
 }
 
-func setupSchemaRegistry() streamhub.InMemorySchemaRegistry {
-	r := streamhub.InMemorySchemaRegistry{}
+func setupSchemaRegistry() streams.InMemorySchemaRegistry {
+	r := streams.InMemorySchemaRegistry{}
 	r.RegisterDefinition("student-signed_up", `{
 		"type": "record",
 		"name": "fooMessage",

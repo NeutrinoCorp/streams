@@ -1,4 +1,4 @@
-package streamhub
+package streams
 
 import (
 	"context"
@@ -36,7 +36,7 @@ type fooMessage struct {
 
 func TestReaderNodeHandlerBehaviour_Unmarshal(t *testing.T) {
 	var h ReaderHandleFunc = func(ctx context.Context, message Message) error {
-		// streamhub now passes decoded data as pointer
+		// streams now passes decoded data as pointer
 		// This is caused by the usage of the reflect2 package and the new protobuf implementation.
 		//
 		// Protobuf messages are complex structures with inner data components such as sync.Mutex which require a

@@ -3,7 +3,7 @@ package parser_test
 import (
 	"testing"
 
-	"github.com/neutrinocorp/streamhub/parser"
+	"github.com/neutrinocorp/streams/parser"
 	"github.com/stretchr/testify/assert"
 )
 

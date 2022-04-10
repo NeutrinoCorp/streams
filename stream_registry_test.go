@@ -1,11 +1,11 @@
-package streamhub_test
+package streams_test
 
 import (
 	"strconv"
 	"testing"
 
 	"github.com/modern-go/reflect2"
-	"github.com/neutrinocorp/streamhub"
+	"github.com/neutrinocorp/streams"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,25 +15,25 @@ type fooMessage struct {
 
 var streamRegistrySetSuite = []struct {
 	InMsg  interface{}
-	InMeta streamhub.StreamMetadata
-	Exp    streamhub.StreamMetadata
+	InMeta streams.StreamMetadata
+	Exp    streams.StreamMetadata
 	Err    error
 }{
 	{
 		InMsg:  fooMessage{},
-		InMeta: streamhub.StreamMetadata{},
-		Exp: streamhub.StreamMetadata{
+		InMeta: streams.StreamMetadata{},
+		Exp: streams.StreamMetadata{
 			GoType: reflect2.TypeOf(fooMessage{}),
 		},
 		Err: nil,
 	},
 	{
 		InMsg: fooMessage{},
-		InMeta: streamhub.StreamMetadata{
+		InMeta: streams.StreamMetadata{
 			Stream:               "foo-stream",
 			SchemaDefinitionName: "",
 		},
-		Exp: streamhub.StreamMetadata{
+		Exp: streams.StreamMetadata{
 			Stream: "foo-stream",
 			GoType: reflect2.TypeOf(fooMessage{}),
 		},
@@ -44,7 +44,7 @@ var streamRegistrySetSuite = []struct {
 func TestStreamRegistry_Set(t *testing.T) {
 	for _, tt := range streamRegistrySetSuite {
 		t.Run("", func(t *testing.T) {
-			registry := streamhub.StreamRegistry{}
+			registry := streams.StreamRegistry{}
 			registry.Set(tt.InMsg, tt.InMeta)
 			exp, err := registry.Get(tt.InMsg)
 			assert.EqualValues(t, tt.Exp, exp)
@@ -55,17 +55,17 @@ func TestStreamRegistry_Set(t *testing.T) {
 
 var streamRegistrySetByStringSuite = []struct {
 	InMsgKey string
-	InMeta   streamhub.StreamMetadata
+	InMeta   streams.StreamMetadata
 	Err      error
 }{
 	{
 		InMsgKey: "",
-		InMeta:   streamhub.StreamMetadata{},
+		InMeta:   streams.StreamMetadata{},
 		Err:      nil,
 	},
 	{
 		InMsgKey: "foo",
-		InMeta: streamhub.StreamMetadata{
+		InMeta: streams.StreamMetadata{
 			Stream:               "foo-stream",
 			SchemaDefinitionName: "",
 		},
@@ -73,7 +73,7 @@ var streamRegistrySetByStringSuite = []struct {
 	},
 	{
 		InMsgKey: "bar",
-		InMeta: streamhub.StreamMetadata{
+		InMeta: streams.StreamMetadata{
 			Stream:               "foo-stream",
 			SchemaDefinitionName: "",
 		},
@@ -82,7 +82,7 @@ var streamRegistrySetByStringSuite = []struct {
 }
 
 func TestStreamRegistry_SetByString(t *testing.T) {
-	registry := streamhub.StreamRegistry{}
+	registry := streams.StreamRegistry{}
 	for _, tt := range streamRegistrySetByStringSuite {
 		t.Run("", func(t *testing.T) {
 			registry.SetByString(tt.InMsgKey, tt.InMeta)
@@ -99,21 +99,21 @@ var streamRegistryGetByStringSuite = []struct {
 }{
 	{
 		In:  "",
-		Err: streamhub.ErrMissingStream,
+		Err: streams.ErrMissingStream,
 	},
 	{
 		In:  "bar",
-		Err: streamhub.ErrMissingStream,
+		Err: streams.ErrMissingStream,
 	},
 	{
-		In:  "streamhub_test.fooMessage",
+		In:  "streams_test.fooMessage",
 		Err: nil,
 	},
 }
 
 func TestStreamRegistry_GetByString(t *testing.T) {
-	registry := streamhub.StreamRegistry{}
-	registry.Set(fooMessage{}, streamhub.StreamMetadata{
+	registry := streams.StreamRegistry{}
+	registry.Set(fooMessage{}, streams.StreamMetadata{
 		Stream:               "foo-stream",
 		SchemaDefinitionName: "./streams-schemas/foo.avsc",
 	})
@@ -126,8 +126,8 @@ func TestStreamRegistry_GetByString(t *testing.T) {
 }
 
 func TestStreamRegistry_GetByStreamNameReflection(t *testing.T) {
-	registry := streamhub.StreamRegistry{}
-	registry.Set(fooMessage{}, streamhub.StreamMetadata{
+	registry := streams.StreamRegistry{}
+	registry.Set(fooMessage{}, streams.StreamMetadata{
 		Stream: "foo-stream",
 	})
 	_, err := registry.GetByStreamName("foo-stream")
@@ -140,15 +140,15 @@ var streamRegistryGetByStreamSuite = []struct {
 }{
 	{
 		In:  "",
-		Err: streamhub.ErrMissingStream,
+		Err: streams.ErrMissingStream,
 	},
 	{
 		In:  "bar",
-		Err: streamhub.ErrMissingStream,
+		Err: streams.ErrMissingStream,
 	},
 	{
 		In:  reflect2.TypeOf(fooMessage{}).String(),
-		Err: streamhub.ErrMissingStream,
+		Err: streams.ErrMissingStream,
 	},
 	{
 		In:  "foo-stream",
@@ -157,8 +157,8 @@ var streamRegistryGetByStreamSuite = []struct {
 }
 
 func TestStreamRegistry_GetByStreamName(t *testing.T) {
-	registry := streamhub.StreamRegistry{}
-	registry.SetByString("foo-stream", streamhub.StreamMetadata{
+	registry := streams.StreamRegistry{}
+	registry.SetByString("foo-stream", streams.StreamMetadata{
 		Stream: "foo-stream",
 	})
 	for _, tt := range streamRegistryGetByStreamSuite {
@@ -170,10 +170,10 @@ func TestStreamRegistry_GetByStreamName(t *testing.T) {
 }
 
 func BenchmarkStreamRegistry_Set(b *testing.B) {
-	registry := streamhub.StreamRegistry{}
+	registry := streams.StreamRegistry{}
 	for i := 0; i < b.N; i++ {
 		b.ReportAllocs()
-		registry.Set(fooMessage{}, streamhub.StreamMetadata{
+		registry.Set(fooMessage{}, streams.StreamMetadata{
 			Stream:               "foo-stream",
 			SchemaDefinitionName: "./streams-schemas/foo.avsc",
 		})
@@ -181,11 +181,11 @@ func BenchmarkStreamRegistry_Set(b *testing.B) {
 }
 
 func BenchmarkStreamRegistry_SetByString(b *testing.B) {
-	registry := streamhub.StreamRegistry{}
+	registry := streams.StreamRegistry{}
 	for i := 0; i < b.N; i++ {
 		key := "foo" + strconv.Itoa(i)
 		b.ReportAllocs()
-		registry.SetByString(key, streamhub.StreamMetadata{
+		registry.SetByString(key, streams.StreamMetadata{
 			Stream:               "foo-stream",
 			SchemaDefinitionName: "./streams-schemas/foo.avsc",
 		})
@@ -193,8 +193,8 @@ func BenchmarkStreamRegistry_SetByString(b *testing.B) {
 }
 
 func BenchmarkStreamRegistry_Get(b *testing.B) {
-	registry := streamhub.StreamRegistry{}
-	registry.Set(fooMessage{}, streamhub.StreamMetadata{
+	registry := streams.StreamRegistry{}
+	registry.Set(fooMessage{}, streams.StreamMetadata{
 		Stream:               "foo-stream",
 		SchemaDefinitionName: "./streams-schemas/foo.avsc",
 	})
@@ -206,20 +206,20 @@ func BenchmarkStreamRegistry_Get(b *testing.B) {
 }
 
 func BenchmarkStreamRegistry_GetByString(b *testing.B) {
-	registry := streamhub.StreamRegistry{}
-	registry.SetByString("bar-stream", streamhub.StreamMetadata{
+	registry := streams.StreamRegistry{}
+	registry.SetByString("bar-stream", streams.StreamMetadata{
 		Stream:               "bar-stream",
 		SchemaDefinitionName: "./streams-schemas/bar.avsc",
 	})
-	registry.SetByString("baz-stream", streamhub.StreamMetadata{
+	registry.SetByString("baz-stream", streams.StreamMetadata{
 		Stream:               "baz-stream",
 		SchemaDefinitionName: "./streams-schemas/baz.avsc",
 	})
-	registry.SetByString("barbaz-stream", streamhub.StreamMetadata{
+	registry.SetByString("barbaz-stream", streams.StreamMetadata{
 		Stream:               "barbaz-stream",
 		SchemaDefinitionName: "./streams-schemas/barbaz.avsc",
 	})
-	registry.Set(fooMessage{}, streamhub.StreamMetadata{
+	registry.Set(fooMessage{}, streams.StreamMetadata{
 		Stream:               "foo-stream",
 		SchemaDefinitionName: "./streams-schemas/foo.avsc",
 	})
@@ -230,20 +230,20 @@ func BenchmarkStreamRegistry_GetByString(b *testing.B) {
 }
 
 func BenchmarkStreamRegistry_GetByStreamNameReflection(b *testing.B) {
-	registry := streamhub.StreamRegistry{}
-	registry.SetByString("bar-stream", streamhub.StreamMetadata{
+	registry := streams.StreamRegistry{}
+	registry.SetByString("bar-stream", streams.StreamMetadata{
 		Stream:               "bar-stream",
 		SchemaDefinitionName: "./streams-schemas/bar.avsc",
 	})
-	registry.SetByString("baz-stream", streamhub.StreamMetadata{
+	registry.SetByString("baz-stream", streams.StreamMetadata{
 		Stream:               "baz-stream",
 		SchemaDefinitionName: "./streams-schemas/baz.avsc",
 	})
-	registry.SetByString("barbaz-stream", streamhub.StreamMetadata{
+	registry.SetByString("barbaz-stream", streams.StreamMetadata{
 		Stream:               "barbaz-stream",
 		SchemaDefinitionName: "./streams-schemas/barbaz.avsc",
 	})
-	registry.Set(fooMessage{}, streamhub.StreamMetadata{
+	registry.Set(fooMessage{}, streams.StreamMetadata{
 		Stream:               "foo-stream",
 		SchemaDefinitionName: "./streams-schemas/foo.avsc",
 	})
@@ -255,20 +255,20 @@ func BenchmarkStreamRegistry_GetByStreamNameReflection(b *testing.B) {
 }
 
 func BenchmarkStreamRegistry_GetByStreamName(b *testing.B) {
-	registry := streamhub.StreamRegistry{}
-	registry.SetByString("bar-stream", streamhub.StreamMetadata{
+	registry := streams.StreamRegistry{}
+	registry.SetByString("bar-stream", streams.StreamMetadata{
 		Stream:               "bar-stream",
 		SchemaDefinitionName: "./streams-schemas/bar.avsc",
 	})
-	registry.SetByString("baz-stream", streamhub.StreamMetadata{
+	registry.SetByString("baz-stream", streams.StreamMetadata{
 		Stream:               "baz-stream",
 		SchemaDefinitionName: "./streams-schemas/baz.avsc",
 	})
-	registry.SetByString("barbaz-stream", streamhub.StreamMetadata{
+	registry.SetByString("barbaz-stream", streams.StreamMetadata{
 		Stream:               "barbaz-stream",
 		SchemaDefinitionName: "./streams-schemas/barbaz.avsc",
 	})
-	registry.SetByString("foo-stream", streamhub.StreamMetadata{
+	registry.SetByString("foo-stream", streams.StreamMetadata{
 		Stream:               "foo-stream",
 		SchemaDefinitionName: "./streams-schemas/foo.avsc",
 	})

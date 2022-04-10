@@ -1,11 +1,11 @@
-package streamhub
+package streams
 
 import (
 	"context"
 )
 
 // DefaultHubInstanceName default instance names for nameless Hub instances
-var DefaultHubInstanceName = "com.streamhub"
+var DefaultHubInstanceName = "com.streams"
 
 // Hub is the main component which enables interactions between several systems through the usage of streams.
 type Hub struct {

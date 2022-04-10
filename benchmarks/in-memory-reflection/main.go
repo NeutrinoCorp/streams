@@ -7,8 +7,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/neutrinocorp/streamhub"
-	"github.com/neutrinocorp/streamhub/driver/shmemory"
+	"github.com/neutrinocorp/streams"
+	"github.com/neutrinocorp/streams/driver/shmemory"
 )
 
 type transactionRegistered struct {
@@ -33,9 +33,9 @@ func main() {
 	defer cancel()
 
 	b := shmemory.NewBus(0)
-	hub := streamhub.NewHub(
-		streamhub.WithWriter(shmemory.NewWriter(b)),
-		streamhub.WithReader(shmemory.NewReader(b)))
+	hub := streams.NewHub(
+		streams.WithWriter(shmemory.NewWriter(b)),
+		streams.WithReader(shmemory.NewReader(b)))
 
 	registerStream(hub)
 	registerListeners(hub)
@@ -51,21 +51,21 @@ func main() {
 	log.Printf("processed messages: %d msg/sec", totalProcessedMessages)
 }
 
-func registerStream(h *streamhub.Hub) {
-	h.RegisterStream(transactionRegistered{}, streamhub.StreamMetadata{
+func registerStream(h *streams.Hub) {
+	h.RegisterStream(transactionRegistered{}, streams.StreamMetadata{
 		Stream: "ncorp.wallet.tx.registered",
 	})
 }
 
-func registerListeners(h *streamhub.Hub) {
+func registerListeners(h *streams.Hub) {
 	_ = h.Read(transactionRegistered{},
-		streamhub.WithHandlerFunc(func(ctx context.Context, message streamhub.Message) error {
+		streams.WithHandlerFunc(func(ctx context.Context, message streams.Message) error {
 			atomic.AddUint64(&totalProcessedMessages, 1)
 			return nil
 		}))
 }
 
-func publishMessages(timeFrame *time.Timer, h *streamhub.Hub) {
+func publishMessages(timeFrame *time.Timer, h *streams.Hub) {
 	for {
 		go func() {
 			err := h.Write(context.Background(), transactionRegistered{

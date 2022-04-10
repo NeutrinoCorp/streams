@@ -3,7 +3,7 @@ package amazon_test
 import (
 	"testing"
 
-	"github.com/neutrinocorp/streamhub/driver/amazon"
+	"github.com/neutrinocorp/streams/driver/amazon"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/stretchr/testify/assert"

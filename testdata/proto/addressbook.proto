@@ -5,7 +5,7 @@ package tutorial;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/neutrinocorp/streamhub/testdata/proto/examplepb";
+option go_package = "./examplepb";
 
 message Person {
   string name = 1;

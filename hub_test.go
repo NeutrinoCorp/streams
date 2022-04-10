@@ -1,4 +1,4 @@
-package streamhub_test
+package streams_test
 
 import (
 	"context"
@@ -8,20 +8,20 @@ import (
 	"testing"
 	"time"
 
-	"github.com/neutrinocorp/streamhub"
+	"github.com/neutrinocorp/streams"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestHub_Write(t *testing.T) {
-	hub := streamhub.NewHub(streamhub.WithSchemaRegistry(streamhub.NoopSchemaRegistry{}))
+	hub := streams.NewHub(streams.WithSchemaRegistry(streams.NoopSchemaRegistry{}))
 	hub.Writer = nil
 	ctx := context.Background()
 	err := hub.Write(ctx, fooMessage{
 		Foo: "foo",
 	})
-	assert.ErrorIs(t, err, streamhub.ErrMissingStream)
+	assert.ErrorIs(t, err, streams.ErrMissingStream)
 
-	hub.RegisterStream(fooMessage{}, streamhub.StreamMetadata{
+	hub.RegisterStream(fooMessage{}, streams.StreamMetadata{
 		Stream:               "foo-stream",
 		SchemaDefinitionName: "",
 		SchemaVersion:        0,
@@ -29,9 +29,9 @@ func TestHub_Write(t *testing.T) {
 	err = hub.Write(ctx, fooMessage{
 		Foo: "foo",
 	})
-	assert.ErrorIs(t, err, streamhub.ErrMissingWriterDriver)
+	assert.ErrorIs(t, err, streams.ErrMissingWriterDriver)
 
-	hub.Writer = streamhub.NoopWriter
+	hub.Writer = streams.NoopWriter
 	err = hub.Write(ctx, fooMessage{
 		Foo: "foo",
 	})
@@ -39,15 +39,15 @@ func TestHub_Write(t *testing.T) {
 }
 
 func TestHub_WriteBatch(t *testing.T) {
-	hub := streamhub.NewHub(streamhub.WithSchemaRegistry(streamhub.NoopSchemaRegistry{}))
+	hub := streams.NewHub(streams.WithSchemaRegistry(streams.NoopSchemaRegistry{}))
 	hub.Writer = nil
 	ctx := context.Background()
 	_, err := hub.WriteBatch(ctx, fooMessage{
 		Foo: "foo",
 	})
-	assert.ErrorIs(t, err, streamhub.ErrMissingStream)
+	assert.ErrorIs(t, err, streams.ErrMissingStream)
 
-	hub.RegisterStream(fooMessage{}, streamhub.StreamMetadata{
+	hub.RegisterStream(fooMessage{}, streams.StreamMetadata{
 		Stream:               "foo-stream",
 		SchemaDefinitionName: "",
 		SchemaVersion:        0,
@@ -55,16 +55,16 @@ func TestHub_WriteBatch(t *testing.T) {
 	_, err = hub.WriteBatch(ctx, fooMessage{
 		Foo: "foo",
 	})
-	assert.ErrorIs(t, err, streamhub.ErrMissingWriterDriver)
+	assert.ErrorIs(t, err, streams.ErrMissingWriterDriver)
 
-	hub.Writer = streamhub.NoopWriter
+	hub.Writer = streams.NoopWriter
 	hub.IDFactory = failingFakeIDFactory
 	_, err = hub.WriteBatch(ctx, fooMessage{
 		Foo: "foo",
 	})
 	assert.EqualValues(t, errors.New("generic id factory error"), err)
 
-	hub.IDFactory = streamhub.RandInt64Factory
+	hub.IDFactory = streams.RandInt64Factory
 	_, err = hub.WriteBatch(ctx, fooMessage{
 		Foo: "foo",
 	})
@@ -72,14 +72,14 @@ func TestHub_WriteBatch(t *testing.T) {
 }
 
 func TestHub_Write_Func(t *testing.T) {
-	hub := streamhub.NewHub(streamhub.WithSchemaRegistry(streamhub.NoopSchemaRegistry{}))
+	hub := streams.NewHub(streams.WithSchemaRegistry(streams.NoopSchemaRegistry{}))
 	ctx := context.Background()
 	err := hub.Write(ctx, fooMessage{
 		Foo: "foo",
 	})
-	assert.ErrorIs(t, err, streamhub.ErrMissingStream)
+	assert.ErrorIs(t, err, streams.ErrMissingStream)
 
-	hub.RegisterStream(fooMessage{}, streamhub.StreamMetadata{
+	hub.RegisterStream(fooMessage{}, streams.StreamMetadata{
 		Stream:               "foo-stream",
 		SchemaDefinitionName: "",
 		SchemaVersion:        0,
@@ -95,21 +95,21 @@ type fooEvent struct {
 	Bar string `json:"bar"`
 }
 
-var _ streamhub.Event = fooEvent{}
+var _ streams.Event = fooEvent{}
 
 func (f fooEvent) GetSubject() string {
 	return f.Bar
 }
 
 func TestHub_Write_Event(t *testing.T) {
-	hub := streamhub.NewHub(streamhub.WithSchemaRegistry(streamhub.NoopSchemaRegistry{}))
+	hub := streams.NewHub(streams.WithSchemaRegistry(streams.NoopSchemaRegistry{}))
 	ctx := context.Background()
-	hub.RegisterStream(fooMessage{}, streamhub.StreamMetadata{
+	hub.RegisterStream(fooMessage{}, streams.StreamMetadata{
 		Stream:               "foo-stream",
 		SchemaDefinitionName: "",
 		SchemaVersion:        0,
 	})
-	hub.RegisterStream(fooEvent{}, streamhub.StreamMetadata{
+	hub.RegisterStream(fooEvent{}, streams.StreamMetadata{
 		Stream:               "foo-stream",
 		SchemaDefinitionName: "",
 		SchemaVersion:        0,
@@ -117,7 +117,7 @@ func TestHub_Write_Event(t *testing.T) {
 
 	noopWriter := &writerNoopHook{}
 	hub.Writer = noopWriter
-	noopWriter.onWrite = func(ctx context.Context, message streamhub.Message) error {
+	noopWriter.onWrite = func(ctx context.Context, message streams.Message) error {
 		assert.Empty(t, message.Subject)
 		return nil
 	}
@@ -126,7 +126,7 @@ func TestHub_Write_Event(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	noopWriter.onWrite = func(ctx context.Context, message streamhub.Message) error {
+	noopWriter.onWrite = func(ctx context.Context, message streams.Message) error {
 		assert.Equal(t, "bar", message.Subject)
 		return nil
 	}
@@ -138,11 +138,11 @@ func TestHub_Write_Event(t *testing.T) {
 }
 
 func TestHub_Write_With_Bad_Marshaling(t *testing.T) {
-	hub := streamhub.NewHub(streamhub.WithSchemaRegistry(streamhub.NoopSchemaRegistry{}),
-		streamhub.WithMarshaler(failingFakeMarshaler{}))
+	hub := streams.NewHub(streams.WithSchemaRegistry(streams.NoopSchemaRegistry{}),
+		streams.WithMarshaler(failingFakeMarshaler{}))
 	ctx := context.Background()
 
-	hub.RegisterStream(fooMessage{}, streamhub.StreamMetadata{
+	hub.RegisterStream(fooMessage{}, streams.StreamMetadata{
 		Stream:               "foo-stream",
 		SchemaDefinitionName: "",
 		SchemaVersion:        0,
@@ -154,11 +154,11 @@ func TestHub_Write_With_Bad_Marshaling(t *testing.T) {
 }
 
 func TestHub_Write_With_Bad_ID_Factory(t *testing.T) {
-	hub := streamhub.NewHub(streamhub.WithSchemaRegistry(streamhub.NoopSchemaRegistry{}),
-		streamhub.WithIDFactory(failingFakeIDFactory))
+	hub := streams.NewHub(streams.WithSchemaRegistry(streams.NoopSchemaRegistry{}),
+		streams.WithIDFactory(failingFakeIDFactory))
 	ctx := context.Background()
 
-	hub.RegisterStream(fooMessage{}, streamhub.StreamMetadata{
+	hub.RegisterStream(fooMessage{}, streams.StreamMetadata{
 		Stream:               "foo-stream",
 		SchemaDefinitionName: "",
 		SchemaVersion:        0,
@@ -170,10 +170,10 @@ func TestHub_Write_With_Bad_ID_Factory(t *testing.T) {
 }
 
 func TestHub_WriteRawMessage(t *testing.T) {
-	hub := streamhub.NewHub()
+	hub := streams.NewHub()
 	ctx := context.Background()
 
-	err := hub.WriteRawMessage(ctx, streamhub.NewMessage(streamhub.NewMessageArgs{
+	err := hub.WriteRawMessage(ctx, streams.NewMessage(streams.NewMessageArgs{
 		SchemaVersion:        9,
 		Data:                 []byte("hello there"),
 		ID:                   "1",
@@ -186,12 +186,12 @@ func TestHub_WriteRawMessage(t *testing.T) {
 }
 
 func TestHub_WriteRawMessageBatch(t *testing.T) {
-	hub := streamhub.NewHub()
+	hub := streams.NewHub()
 	hub.Writer = nil
 	ctx := context.Background()
 
-	messageBuffer := []streamhub.Message{
-		streamhub.NewMessage(streamhub.NewMessageArgs{
+	messageBuffer := []streams.Message{
+		streams.NewMessage(streams.NewMessageArgs{
 			SchemaVersion:        9,
 			Data:                 []byte("hello foo"),
 			ID:                   "123",
@@ -199,7 +199,7 @@ func TestHub_WriteRawMessageBatch(t *testing.T) {
 			Stream:               "foo-stream",
 			SchemaDefinitionName: "",
 			ContentType:          "",
-		}), streamhub.NewMessage(streamhub.NewMessageArgs{
+		}), streams.NewMessage(streams.NewMessageArgs{
 			SchemaVersion:        9,
 			Data:                 []byte("hello bar"),
 			ID:                   "abc",
@@ -211,12 +211,12 @@ func TestHub_WriteRawMessageBatch(t *testing.T) {
 	}
 
 	out, err := hub.WriteRawMessageBatch(ctx, messageBuffer...)
-	assert.ErrorIs(t, err, streamhub.ErrMissingWriterDriver)
+	assert.ErrorIs(t, err, streams.ErrMissingWriterDriver)
 	assert.Equal(t, uint32(0), out)
 
 	totalMessagesPushed := 0
 	hub.Writer = writerNoopHook{
-		onWriteBatch: func(_ context.Context, messages ...streamhub.Message) (uint32, error) {
+		onWriteBatch: func(_ context.Context, messages ...streams.Message) (uint32, error) {
 			totalMessagesPushed = len(messages)
 			return uint32(totalMessagesPushed), nil
 		},
@@ -226,17 +226,17 @@ func TestHub_WriteRawMessageBatch(t *testing.T) {
 	assert.Equal(t, len(messageBuffer), totalMessagesPushed)
 	assert.Equal(t, uint32(len(messageBuffer)), out)
 
-	// testing noopWriter from streamhub package to increase test coverage
-	hub.Writer = streamhub.NoopWriter
+	// testing noopWriter from streams package to increase test coverage
+	hub.Writer = streams.NoopWriter
 	_, err = hub.WriteRawMessageBatch(ctx, messageBuffer...)
 	assert.NoError(t, err)
 }
 
 func TestHub_WriteInMemorySchemaRegistry(t *testing.T) {
-	r := streamhub.InMemorySchemaRegistry{}
-	hub := streamhub.NewHub(streamhub.WithSchemaRegistry(r))
+	r := streams.InMemorySchemaRegistry{}
+	hub := streams.NewHub(streams.WithSchemaRegistry(r))
 	ctx := context.Background()
-	hub.RegisterStream(fooMessage{}, streamhub.StreamMetadata{
+	hub.RegisterStream(fooMessage{}, streams.StreamMetadata{
 		Stream:               "foo-stream",
 		SchemaDefinitionName: "foo",
 		SchemaVersion:        7,
@@ -244,7 +244,7 @@ func TestHub_WriteInMemorySchemaRegistry(t *testing.T) {
 	err := hub.Write(ctx, fooMessage{
 		Foo: "foo",
 	})
-	assert.ErrorIs(t, err, streamhub.ErrMissingSchemaDefinition)
+	assert.ErrorIs(t, err, streams.ErrMissingSchemaDefinition)
 
 	r.RegisterDefinition("foo", "sample_foo_format", 7)
 	err = hub.Write(ctx, fooMessage{
@@ -254,14 +254,14 @@ func TestHub_WriteInMemorySchemaRegistry(t *testing.T) {
 }
 
 func TestHub_WriteByMessageKey(t *testing.T) {
-	hub := streamhub.NewHub(streamhub.WithSchemaRegistry(streamhub.NoopSchemaRegistry{}))
+	hub := streams.NewHub(streams.WithSchemaRegistry(streams.NoopSchemaRegistry{}))
 	ctx := context.Background()
 	err := hub.WriteByMessageKey(ctx, "foo", fooMessage{
 		Foo: "foo",
 	})
-	assert.ErrorIs(t, err, streamhub.ErrMissingStream)
+	assert.ErrorIs(t, err, streams.ErrMissingStream)
 
-	hub.RegisterStreamByString("foo_custom", streamhub.StreamMetadata{
+	hub.RegisterStreamByString("foo_custom", streams.StreamMetadata{
 		Stream:               "foo-stream",
 		SchemaDefinitionName: "",
 		SchemaVersion:        0,
@@ -273,16 +273,16 @@ func TestHub_WriteByMessageKey(t *testing.T) {
 }
 
 func TestHub_WriteByMessageKeyBatch(t *testing.T) {
-	hub := streamhub.NewHub(streamhub.WithSchemaRegistry(streamhub.NoopSchemaRegistry{}))
+	hub := streams.NewHub(streams.WithSchemaRegistry(streams.NoopSchemaRegistry{}))
 	ctx := context.Background()
 	_, err := hub.WriteByMessageKeyBatch(ctx, map[string]interface{}{
 		"foo": fooMessage{
 			Foo: "foo",
 		},
 	})
-	assert.ErrorIs(t, err, streamhub.ErrMissingStream)
+	assert.ErrorIs(t, err, streams.ErrMissingStream)
 
-	hub.RegisterStreamByString("foo_custom", streamhub.StreamMetadata{
+	hub.RegisterStreamByString("foo_custom", streams.StreamMetadata{
 		Stream:               "foo-stream",
 		SchemaDefinitionName: "",
 		SchemaVersion:        0,
@@ -296,7 +296,7 @@ func TestHub_WriteByMessageKeyBatch(t *testing.T) {
 	})
 	assert.EqualValues(t, errors.New("generic id factory error"), err)
 
-	hub.IDFactory = streamhub.RandInt64Factory
+	hub.IDFactory = streams.RandInt64Factory
 	_, err = hub.WriteByMessageKeyBatch(ctx, map[string]interface{}{
 		"foo_custom": fooMessage{
 			Foo: "custom",
@@ -306,19 +306,19 @@ func TestHub_WriteByMessageKeyBatch(t *testing.T) {
 }
 
 func TestHub_Read(t *testing.T) {
-	h := streamhub.NewHub()
+	h := streams.NewHub()
 	err := h.Read(fooMessage{})
-	assert.ErrorIs(t, err, streamhub.ErrMissingStream)
+	assert.ErrorIs(t, err, streams.ErrMissingStream)
 
-	h.StreamRegistry.Set(fooMessage{}, streamhub.StreamMetadata{})
+	h.StreamRegistry.Set(fooMessage{}, streams.StreamMetadata{})
 	err = h.Read(fooMessage{})
 	assert.NoError(t, err)
 }
 
 func TestHub_Start(t *testing.T) {
-	h := streamhub.NewHub()
+	h := streams.NewHub()
 
-	h.StreamRegistry.Set(fooMessage{}, streamhub.StreamMetadata{
+	h.StreamRegistry.Set(fooMessage{}, streams.StreamMetadata{
 		Stream: "foo-stream",
 	})
 	err := h.Read(fooMessage{})
@@ -332,10 +332,10 @@ func TestHub_Start(t *testing.T) {
 	// level or ReaderNode level
 	assert.Equal(t, 2, runtime.NumGoroutine())
 
-	h.StreamRegistry.Set(fooMessage{}, streamhub.StreamMetadata{
+	h.StreamRegistry.Set(fooMessage{}, streams.StreamMetadata{
 		Stream: "foo-stream",
 	})
-	err = h.Read(fooMessage{}, streamhub.WithDriver(listenerDriverNoopGoroutine{}))
+	err = h.Read(fooMessage{}, streams.WithDriver(listenerDriverNoopGoroutine{}))
 	assert.NoError(t, err)
 
 	baseCtx2, cancel2 := context.WithTimeout(context.Background(), time.Millisecond)
@@ -348,10 +348,10 @@ func TestHub_Start(t *testing.T) {
 }
 
 func BenchmarkHub_RegisterStream(b *testing.B) {
-	hub := streamhub.NewHub()
+	hub := streams.NewHub()
 	for i := 0; i < b.N; i++ {
 		b.ReportAllocs()
-		hub.RegisterStream(fooMessage{}, streamhub.StreamMetadata{
+		hub.RegisterStream(fooMessage{}, streams.StreamMetadata{
 			Stream:               "foo-stream",
 			SchemaDefinitionName: "foo_stream",
 			SchemaVersion:        8,
@@ -360,10 +360,10 @@ func BenchmarkHub_RegisterStream(b *testing.B) {
 }
 
 func BenchmarkHub_RegisterStreamByString(b *testing.B) {
-	hub := streamhub.NewHub()
+	hub := streams.NewHub()
 	for i := 0; i < b.N; i++ {
 		b.ReportAllocs()
-		hub.RegisterStreamByString("fooMessage"+strconv.Itoa(i), streamhub.StreamMetadata{
+		hub.RegisterStreamByString("fooMessage"+strconv.Itoa(i), streams.StreamMetadata{
 			Stream:               "foo-stream",
 			SchemaDefinitionName: "foo_stream",
 			SchemaVersion:        8,
@@ -372,8 +372,8 @@ func BenchmarkHub_RegisterStreamByString(b *testing.B) {
 }
 
 func BenchmarkHub_Write(b *testing.B) {
-	hub := streamhub.NewHub()
-	hub.RegisterStream(fooMessage{}, streamhub.StreamMetadata{
+	hub := streams.NewHub()
+	hub.RegisterStream(fooMessage{}, streams.StreamMetadata{
 		Stream: "foo-stream",
 	})
 	msg := fooMessage{
@@ -390,10 +390,10 @@ func BenchmarkHub_Write(b *testing.B) {
 }
 
 func BenchmarkHub_Write_With_Schema_Registry(b *testing.B) {
-	r := streamhub.InMemorySchemaRegistry{}
+	r := streams.InMemorySchemaRegistry{}
 	r.RegisterDefinition("foo-stream", "elver", 0)
-	hub := streamhub.NewHub(streamhub.WithSchemaRegistry(r))
-	hub.RegisterStream(fooMessage{}, streamhub.StreamMetadata{
+	hub := streams.NewHub(streams.WithSchemaRegistry(r))
+	hub.RegisterStream(fooMessage{}, streams.StreamMetadata{
 		Stream:               "foo-stream",
 		SchemaDefinitionName: "foo-stream",
 		SchemaVersion:        0,
@@ -412,8 +412,8 @@ func BenchmarkHub_Write_With_Schema_Registry(b *testing.B) {
 }
 
 func BenchmarkHub_WriteByMessageKey(b *testing.B) {
-	hub := streamhub.NewHub()
-	hub.RegisterStreamByString("fooMessage", streamhub.StreamMetadata{
+	hub := streams.NewHub()
+	hub.RegisterStreamByString("fooMessage", streams.StreamMetadata{
 		Stream: "foo-stream",
 	})
 	msg := fooMessage{
@@ -430,8 +430,8 @@ func BenchmarkHub_WriteByMessageKey(b *testing.B) {
 }
 
 func BenchmarkHub_WriteRawMessage(b *testing.B) {
-	hub := streamhub.NewHub()
-	args := streamhub.NewMessageArgs{
+	hub := streams.NewHub()
+	args := streams.NewMessageArgs{
 		SchemaVersion:        9,
 		Data:                 []byte("hello there"),
 		ID:                   "1",
@@ -443,7 +443,7 @@ func BenchmarkHub_WriteRawMessage(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		b.ReportAllocs()
-		err := hub.WriteRawMessage(context.Background(), streamhub.NewMessage(args))
+		err := hub.WriteRawMessage(context.Background(), streams.NewMessage(args))
 		if err != nil {
 			panic(err)
 		}
@@ -451,8 +451,8 @@ func BenchmarkHub_WriteRawMessage(b *testing.B) {
 }
 
 func BenchmarkHub_WritePreBuildRawMessage(b *testing.B) {
-	hub := streamhub.NewHub()
-	msg := streamhub.NewMessage(streamhub.NewMessageArgs{ // 2 allocs
+	hub := streams.NewHub()
+	msg := streams.NewMessage(streams.NewMessageArgs{ // 2 allocs
 		SchemaVersion:        9,
 		Data:                 []byte("hello there"),
 		ID:                   "1",

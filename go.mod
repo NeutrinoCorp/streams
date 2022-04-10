@@ -1,4 +1,4 @@
-module github.com/neutrinocorp/streamhub
+module github.com/neutrinocorp/streams
 
 go 1.17
 

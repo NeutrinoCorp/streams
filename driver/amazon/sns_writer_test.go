@@ -12,8 +12,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/google/uuid"
-	"github.com/neutrinocorp/streamhub"
-	"github.com/neutrinocorp/streamhub/driver/amazon"
+	"github.com/neutrinocorp/streams"
+	"github.com/neutrinocorp/streams/driver/amazon"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -26,7 +26,7 @@ type SnsWriterSuite struct {
 	cfgAws    aws.Config
 	client    *sns.Client
 	writer    amazon.SnsWriter
-	marshaler streamhub.Marshaler
+	marshaler streams.Marshaler
 
 	topicBuffer sync.Map
 }
@@ -42,7 +42,7 @@ func (s *SnsWriterSuite) SetupSuite() {
 	s.topicBuffer = sync.Map{}
 	s.createSnsTopics()
 	s.writer = amazon.NewSnsWriter(s.client, s.accountID, s.cfgAws.Region)
-	s.marshaler = streamhub.JSONMarshaler{}
+	s.marshaler = streams.JSONMarshaler{}
 }
 
 func (s *SnsWriterSuite) createSnsTopics() {
@@ -105,7 +105,7 @@ func (s *SnsWriterSuite) TestSnsWriter_Write() {
 		Bar: "dolor sit amet",
 	})
 	s.Require().NoError(err)
-	err = s.writer.Write(context.Background(), streamhub.NewMessage(streamhub.NewMessageArgs{
+	err = s.writer.Write(context.Background(), streams.NewMessage(streams.NewMessageArgs{
 		SchemaVersion:        1,
 		Data:                 eventRaw,
 		ID:                   uuid.NewString(),
@@ -124,7 +124,7 @@ func (s *SnsWriterSuite) TestSnsWriter_WriteBatch() {
 		Bar: "dolor sit amet",
 	})
 	s.Require().NoError(err)
-	out, err := s.writer.WriteBatch(context.Background(), streamhub.NewMessage(streamhub.NewMessageArgs{
+	out, err := s.writer.WriteBatch(context.Background(), streams.NewMessage(streams.NewMessageArgs{
 		SchemaVersion:        1,
 		Data:                 eventRaw,
 		ID:                   uuid.NewString(),
@@ -133,7 +133,7 @@ func (s *SnsWriterSuite) TestSnsWriter_WriteBatch() {
 		SchemaDefinitionName: "",
 		ContentType:          s.marshaler.ContentType(),
 		Subject:              "",
-	}), streamhub.NewMessage(streamhub.NewMessageArgs{
+	}), streams.NewMessage(streams.NewMessageArgs{
 		SchemaVersion:        1,
 		Data:                 eventRaw,
 		ID:                   uuid.NewString(),

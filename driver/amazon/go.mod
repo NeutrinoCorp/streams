@@ -1,4 +1,4 @@
-module github.com/neutrinocorp/streamhub/driver/amazon
+module github.com/neutrinocorp/streams/driver/amazon
 
 go 1.17
 
@@ -10,7 +10,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.18.3
 	github.com/google/uuid v1.3.0
 	github.com/json-iterator/go v1.1.12
-	github.com/neutrinocorp/streamhub v0.1.5
+	github.com/neutrinocorp/streams v0.1.5
 	github.com/stretchr/testify v1.7.0
 )
 
@@ -34,4 +34,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )
 
-replace github.com/neutrinocorp/streamhub => ../../
+replace github.com/neutrinocorp/streams => ../../

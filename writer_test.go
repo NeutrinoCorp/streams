@@ -1,1 +1,1 @@
-package streamhub_test
+package streams_test
