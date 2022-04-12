@@ -10,7 +10,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.18.3
 	github.com/google/uuid v1.3.0
 	github.com/json-iterator/go v1.1.12
-	github.com/neutrinocorp/streams v0.1.5
+	github.com/neutrinocorp/streams v0.2.1
 	github.com/stretchr/testify v1.7.0
 )
 
