@@ -70,3 +70,29 @@ func NewQueueUrl(region, accountID, queueName string) *string {
 	buff.WriteString(nameSanitizer.Replace(queueName))
 	return aws.String(buff.String())
 }
+
+const (
+	baseEventBridgeBusPrefix      = "arn:aws:events:"
+	baseEventBridgeBusResource    = ":event-bus/"
+	eventBridgeBusTotalSeparators = 1
+)
+
+// NewEventBusArn builds an Amazon EventBridge's Event Bus Amazon Resource Name (ARN).
+func NewEventBusArn(region, accountID, baseBusName string) *string {
+	isInvalid := region == "" || accountID == "" || baseBusName == ""
+	if isInvalid {
+		return nil
+	}
+
+	buffSize := len(baseEventBridgeBusPrefix) + len(region) + len(accountID) +
+		len(baseEventBridgeBusResource) + len(baseBusName) + eventBridgeBusTotalSeparators
+	buff := strings.Builder{}
+	buff.Grow(buffSize)
+	buff.WriteString(baseEventBridgeBusPrefix)
+	buff.WriteString(region)
+	buff.WriteString(":")
+	buff.WriteString(accountID)
+	buff.WriteString(baseEventBridgeBusResource)
+	buff.WriteString(baseBusName)
+	return aws.String(buff.String())
+}

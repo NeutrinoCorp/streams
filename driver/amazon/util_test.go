@@ -114,3 +114,49 @@ func BenchmarkNewQueueUrl(b *testing.B) {
 		_ = amazon.NewQueueUrl("us-east-2", "123456789012", "ncorp.dev.platform.foo_bar.notify_user.on.bar.activated")
 	}
 }
+
+func TestNewEventBusName(t *testing.T) {
+	tests := []struct {
+		Name        string
+		InAccountID string
+		InRegion    string
+		InBus       string
+		Exp         *string
+	}{
+		{
+			Name:        "Empty",
+			InAccountID: "",
+			InRegion:    "",
+			InBus:       "",
+			Exp:         nil,
+		},
+		{
+			Name:        "Valid Broker Account ID",
+			InAccountID: "123456789012",
+			InRegion:    "",
+			InBus:       "",
+			Exp:         nil,
+		},
+		{
+			Name:        "Valid Amazon Region",
+			InAccountID: "123456789012",
+			InRegion:    "us-east-2",
+			InBus:       "",
+			Exp:         nil,
+		},
+		{
+			Name:        "Valid",
+			InAccountID: "123456789012",
+			InRegion:    "us-east-2",
+			InBus:       "ncorp.prod",
+			Exp:         aws.String("arn:aws:events:us-east-2:123456789012:event-bus/ncorp.prod"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			exp := amazon.NewEventBusArn(tt.InRegion, tt.InAccountID, tt.InBus)
+			assert.EqualValues(t, tt.Exp, exp)
+		})
+	}
+}

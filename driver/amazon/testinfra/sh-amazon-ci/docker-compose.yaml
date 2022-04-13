@@ -4,7 +4,7 @@ services:
     image: "localstack/localstack:latest-amd64"
     network_mode: bridge
     environment:
-      - SERVICES=sns,sqs
+      - SERVICES=sns,sqs,events
       - EDGE_PORT=4566
       - DATA_DIR=${DATA_DIR-}
       - HOST_TMP_FOLDER=${TMPDIR:-/tmp/}localstack

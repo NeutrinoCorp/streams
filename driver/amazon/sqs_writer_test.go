@@ -11,7 +11,6 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
-	"github.com/google/uuid"
 	"github.com/neutrinocorp/streams"
 	"github.com/neutrinocorp/streams/driver/amazon"
 	"github.com/stretchr/testify/suite"
@@ -108,7 +107,7 @@ func (s *SqsWriterSuite) TestSqsWriter_Write() {
 	err = s.writer.Write(context.Background(), streams.NewMessage(streams.NewMessageArgs{
 		SchemaVersion:        1,
 		Data:                 eventRaw,
-		ID:                   uuid.NewString(),
+		ID:                   "123",
 		Source:               "",
 		Stream:               sqsQueues[0],
 		SchemaDefinitionName: "",
@@ -127,7 +126,7 @@ func (s *SqsWriterSuite) TestSqsWriter_WriteBatch() {
 	out, err := s.writer.WriteBatch(context.Background(), streams.NewMessage(streams.NewMessageArgs{
 		SchemaVersion:        1,
 		Data:                 eventRaw,
-		ID:                   uuid.NewString(),
+		ID:                   "123",
 		Source:               "",
 		Stream:               sqsQueues[0],
 		SchemaDefinitionName: "",
@@ -136,7 +135,7 @@ func (s *SqsWriterSuite) TestSqsWriter_WriteBatch() {
 	}), streams.NewMessage(streams.NewMessageArgs{
 		SchemaVersion:        1,
 		Data:                 eventRaw,
-		ID:                   uuid.NewString(),
+		ID:                   "456",
 		Source:               "",
 		Stream:               sqsQueues[1],
 		SchemaDefinitionName: "",
