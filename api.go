@@ -36,22 +36,22 @@ func RegisterStreamByString(messageType string, metadata StreamMetadata) {
 	DefaultHub.RegisterStreamByString(messageType, metadata)
 }
 
-// Read registers a new stream-listening background job.
+// Read registers a new stream-reading background job.
 //
-// If listening to a Google's Protocol Buffer message, DO NOT use a pointer as message schema
+// If reading from a Google's Protocol Buffer message pipeline, DO NOT use a pointer as message schema
 // to avoid marshaling problems
 func Read(message interface{}, opts ...ReaderNodeOption) error {
 	checkDefaultHubInstance()
 	return DefaultHub.Read(message, opts...)
 }
 
-// ReadByStreamKey registers a new stream-listening background job using the raw stream identifier (e.g. topic name).
+// ReadByStreamKey registers a new stream-reading background job using the raw stream identifier (e.g. topic name).
 func ReadByStreamKey(stream string, opts ...ReaderNodeOption) {
 	checkDefaultHubInstance()
 	DefaultHub.ReadByStreamKey(stream, opts...)
 }
 
-// Start initiates all daemons (e.g. stream-listening jobs) processes
+// Start initiates all daemons (e.g. stream-reading jobs) processes
 func Start(ctx context.Context) {
 	checkDefaultHubInstance()
 	DefaultHub.Start(ctx)
