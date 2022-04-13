@@ -19,7 +19,7 @@ func TestMarshalSnsMessage(t *testing.T) {
 		{
 			Name: "Empty",
 			In:   streams.Message{},
-			Exp:  "{\"id\":\"\",\"stream\":\"\",\"source\":\"\",\"specversion\":\"\",\"type\":\"\",\"data\":null,\"correlation_id\":\"\",\"causation_id\":\"\"}",
+			Exp:  "{\"stream\":\"\",\"stream_version\":0,\"id\":\"\",\"source\":\"\",\"specversion\":\"\",\"type\":\"\",\"data\":null,\"correlation_id\":\"\",\"causation_id\":\"\"}",
 			Err:  nil,
 		},
 		{
@@ -30,7 +30,7 @@ func TestMarshalSnsMessage(t *testing.T) {
 				Stream: "foo.bar.baz",
 				Data:   []byte("lorem ipsum dolor sit amet"),
 			},
-			Exp: "{\"id\":\"123\",\"stream\":\"foo.bar.baz\",\"source\":\"org.ncorp.foo\",\"specversion\":\"\",\"type\":\"\",\"data\":\"bG9yZW0gaXBzdW0gZG9sb3Igc2l0IGFtZXQ=\",\"correlation_id\":\"\",\"causation_id\":\"\"}",
+			Exp: "{\"stream\":\"foo.bar.baz\",\"stream_version\":0,\"id\":\"123\",\"source\":\"org.ncorp.foo\",\"specversion\":\"\",\"type\":\"\",\"data\":\"bG9yZW0gaXBzdW0gZG9sb3Igc2l0IGFtZXQ=\",\"correlation_id\":\"\",\"causation_id\":\"\"}",
 			Err: nil,
 		},
 	}
