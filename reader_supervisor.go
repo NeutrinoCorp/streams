@@ -27,7 +27,7 @@ type readerSupervisor struct {
 func newReaderSupervisor(h *Hub) *readerSupervisor {
 	return &readerSupervisor{
 		parentHub:          h,
-		readerRegistry:     make([]ReaderNode, 0),
+		readerRegistry:     make(map[string][]ReaderNode),
 		baseReaderNodeOpts: h.ReaderBaseOptions,
 	}
 }
@@ -65,7 +65,7 @@ func (s *readerSupervisor) forkNode(stream string, opts ...ReaderNodeOption) {
 		MaxHandlerPoolSize:    baseOpts.maxHandlerPoolSize,
 	}
 	node.HandlerFunc = s.attachDefaultBehaviours(node)
-	s.readerRegistry = append(s.readerRegistry, *node)
+	s.readerRegistry[stream] = append(s.readerRegistry[stream], *node)
 }
 
 func (s *readerSupervisor) ReaderHandleFunc(baseOpts readerNodeOptions) ReaderHandleFunc {
@@ -94,7 +94,9 @@ func (s *readerSupervisor) attachDefaultBehaviours(node *ReaderNode) ReaderHandl
 
 // startNodes boots up all nodes from the readerSupervisor's ReaderRegistry.
 func (s *readerSupervisor) startNodes(ctx context.Context) {
-	for _, node := range s.readerRegistry {
-		node.start(ctx)
+	for _, nodes := range s.readerRegistry {
+		for _, node := range nodes {
+			node.start(ctx)
+		}
 	}
 }

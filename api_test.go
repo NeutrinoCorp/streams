@@ -26,6 +26,7 @@ func TestApi(t *testing.T) {
 	_, _ = streams.WriteByMessageKeyBatch(nil, nil)
 	_ = streams.WriteRawMessage(nil, streams.Message{})
 	_, _ = streams.WriteRawMessageBatch(nil, streams.Message{})
+	_ = streams.GetStreamReaderNodes("")
 	streams.Start(nil)
 	streams.DefaultHub = nil
 	_ = streams.Read(nil)

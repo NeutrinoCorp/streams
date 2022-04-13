@@ -56,6 +56,11 @@ func newHubDefaults() hubOptions {
 	}
 }
 
+// GetStreamReaderNodes retrieves ReaderNode(s) from a stream.
+func (h *Hub) GetStreamReaderNodes(stream string) []ReaderNode {
+	return h.readerSupervisor.readerRegistry[stream]
+}
+
 // RegisterStream creates a relation between a stream message type and metadata.
 //
 // If registering a Google's Protocol Buffer message, DO NOT use a pointer as message schema

@@ -15,20 +15,20 @@ func TestReaderSupervisor_ForkNode(t *testing.T) {
 	sv.forkNode("")
 	assert.Equal(t, 0, len(sv.readerRegistry))
 	sv.forkNode("foo")
-	assert.Equal(t, DefaultConcurrencyLevel, sv.readerRegistry[0].ConcurrencyLevel)
-	assert.Equal(t, DefaultRetryInitialInterval, sv.readerRegistry[0].RetryInitialInterval)
-	assert.Equal(t, DefaultRetryMaxInterval, sv.readerRegistry[0].RetryMaxInterval)
-	assert.Equal(t, DefaultRetryTimeout, sv.readerRegistry[0].RetryTimeout)
-	assert.Equal(t, "bar-queue", sv.readerRegistry[0].Group)
+	assert.Equal(t, DefaultConcurrencyLevel, sv.readerRegistry["foo"][0].ConcurrencyLevel)
+	assert.Equal(t, DefaultRetryInitialInterval, sv.readerRegistry["foo"][0].RetryInitialInterval)
+	assert.Equal(t, DefaultRetryMaxInterval, sv.readerRegistry["foo"][0].RetryMaxInterval)
+	assert.Equal(t, DefaultRetryTimeout, sv.readerRegistry["foo"][0].RetryTimeout)
+	assert.Equal(t, "bar-queue", sv.readerRegistry["foo"][0].Group)
 
 	sv.forkNode("baz")
-	assert.Equal(t, "bar-queue", sv.readerRegistry[1].Group)
+	assert.Equal(t, "bar-queue", sv.readerRegistry["baz"][0].Group)
 
 	sv.forkNode("foobar", WithGroup("barbaz-queue"), WithHandlerFunc(func(ctx context.Context, message Message) error {
 		return nil
 	}))
-	assert.Equal(t, "barbaz-queue", sv.readerRegistry[2].Group)
-	assert.NotNil(t, sv.readerRegistry[2].HandlerFunc)
+	assert.Equal(t, "barbaz-queue", sv.readerRegistry["foobar"][0].Group)
+	assert.NotNil(t, sv.readerRegistry["foobar"][0].HandlerFunc)
 }
 
 func BenchmarkReaderSupervisor_ForkNode(b *testing.B) {

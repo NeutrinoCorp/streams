@@ -15,11 +15,11 @@ func TestWithHandler(t *testing.T) {
 	hub := NewHub()
 	hub.ReadByStreamKey("foo", opt)
 	assert.NotNil(t,
-		hub.readerSupervisor.readerRegistry[0].HandlerFunc)
+		hub.readerSupervisor.readerRegistry["foo"][0].HandlerFunc)
 
 	hub.ReadByStreamKey("bar")
 	assert.Nil(t,
-		hub.readerSupervisor.readerRegistry[1].HandlerFunc)
+		hub.readerSupervisor.readerRegistry["bar"][0].HandlerFunc)
 }
 
 func TestWithHandlerFunc(t *testing.T) {
@@ -30,11 +30,11 @@ func TestWithHandlerFunc(t *testing.T) {
 
 	hub := NewHub()
 	hub.ReadByStreamKey("foo", opt)
-	assert.NotNil(t, hub.readerSupervisor.readerRegistry[0].HandlerFunc)
+	assert.NotNil(t, hub.readerSupervisor.readerRegistry["foo"][0].HandlerFunc)
 
 	hub.ReadByStreamKey("bar")
 	assert.Nil(t,
-		hub.readerSupervisor.readerRegistry[1].HandlerFunc)
+		hub.readerSupervisor.readerRegistry["bar"][0].HandlerFunc)
 }
 
 func TestWithGroup(t *testing.T) {
@@ -43,7 +43,7 @@ func TestWithGroup(t *testing.T) {
 
 	hub := NewHub()
 	hub.ReadByStreamKey("foo", opt)
-	assert.Equal(t, "bar-job", hub.readerSupervisor.readerRegistry[0].Group)
+	assert.Equal(t, "bar-job", hub.readerSupervisor.readerRegistry["foo"][0].Group)
 }
 
 func TestWithConcurrencyLevel(t *testing.T) {
@@ -52,15 +52,15 @@ func TestWithConcurrencyLevel(t *testing.T) {
 
 	hub := NewHub()
 	hub.ReadByStreamKey("foo", opt)
-	assert.Equal(t, 1, hub.readerSupervisor.readerRegistry[0].ConcurrencyLevel)
+	assert.Equal(t, 1, hub.readerSupervisor.readerRegistry["foo"][0].ConcurrencyLevel)
 
 	opt = WithConcurrencyLevel(0)
 	hub.ReadByStreamKey("bar", opt)
-	assert.Equal(t, 1, hub.readerSupervisor.readerRegistry[1].ConcurrencyLevel)
+	assert.Equal(t, 1, hub.readerSupervisor.readerRegistry["bar"][0].ConcurrencyLevel)
 
 	opt = WithConcurrencyLevel(2)
 	hub.ReadByStreamKey("bar", opt)
-	assert.Equal(t, 2, hub.readerSupervisor.readerRegistry[2].ConcurrencyLevel)
+	assert.Equal(t, 2, hub.readerSupervisor.readerRegistry["bar"][1].ConcurrencyLevel)
 }
 
 func TestWithRetryInitialInterval(t *testing.T) {
@@ -69,7 +69,7 @@ func TestWithRetryInitialInterval(t *testing.T) {
 
 	hub := NewHub()
 	hub.ReadByStreamKey("foo", opt)
-	assert.EqualValues(t, time.Second*5, hub.readerSupervisor.readerRegistry[0].RetryInitialInterval)
+	assert.EqualValues(t, time.Second*5, hub.readerSupervisor.readerRegistry["foo"][0].RetryInitialInterval)
 }
 
 func TestWithRetryMaxInterval(t *testing.T) {
@@ -78,7 +78,7 @@ func TestWithRetryMaxInterval(t *testing.T) {
 
 	hub := NewHub()
 	hub.ReadByStreamKey("foo", opt)
-	assert.EqualValues(t, time.Second*5, hub.readerSupervisor.readerRegistry[0].RetryMaxInterval)
+	assert.EqualValues(t, time.Second*5, hub.readerSupervisor.readerRegistry["foo"][0].RetryMaxInterval)
 }
 
 func TestWithRetryTimeout(t *testing.T) {
@@ -87,7 +87,7 @@ func TestWithRetryTimeout(t *testing.T) {
 
 	hub := NewHub()
 	hub.ReadByStreamKey("foo", opt)
-	assert.EqualValues(t, time.Second*5, hub.readerSupervisor.readerRegistry[0].RetryTimeout)
+	assert.EqualValues(t, time.Second*5, hub.readerSupervisor.readerRegistry["foo"][0].RetryTimeout)
 }
 
 type fakeProviderCfg struct {
@@ -104,7 +104,7 @@ func TestWithProviderConfiguration(t *testing.T) {
 	hub.ReadByStreamKey("foo", opt)
 	assert.EqualValues(t, fakeProviderCfg{
 		Foo: "foo",
-	}, hub.readerSupervisor.readerRegistry[0].ProviderConfiguration)
+	}, hub.readerSupervisor.readerRegistry["foo"][0].ProviderConfiguration)
 }
 
 func TestWithDriver(t *testing.T) {
@@ -114,7 +114,7 @@ func TestWithDriver(t *testing.T) {
 	hub := NewHub()
 	hub.ReadByStreamKey("foo", opt)
 	assert.EqualValues(t, readerNoop{},
-		hub.readerSupervisor.readerRegistry[0].Reader)
+		hub.readerSupervisor.readerRegistry["foo"][0].Reader)
 }
 
 func TestWithMaxHandlerPoolSize(t *testing.T) {
@@ -123,13 +123,13 @@ func TestWithMaxHandlerPoolSize(t *testing.T) {
 
 	hub := NewHub()
 	hub.ReadByStreamKey("foo", opt)
-	assert.Equal(t, DefaultMaxHandlerPoolSize, hub.readerSupervisor.readerRegistry[0].MaxHandlerPoolSize)
+	assert.Equal(t, DefaultMaxHandlerPoolSize, hub.readerSupervisor.readerRegistry["foo"][0].MaxHandlerPoolSize)
 
 	opt = WithMaxHandlerPoolSize(0)
 	hub.ReadByStreamKey("bar", opt)
-	assert.Equal(t, DefaultMaxHandlerPoolSize, hub.readerSupervisor.readerRegistry[1].MaxHandlerPoolSize)
+	assert.Equal(t, DefaultMaxHandlerPoolSize, hub.readerSupervisor.readerRegistry["bar"][0].MaxHandlerPoolSize)
 
 	opt = WithMaxHandlerPoolSize(2)
 	hub.ReadByStreamKey("bar", opt)
-	assert.Equal(t, 2, hub.readerSupervisor.readerRegistry[2].MaxHandlerPoolSize)
+	assert.Equal(t, 2, hub.readerSupervisor.readerRegistry["bar"][1].MaxHandlerPoolSize)
 }

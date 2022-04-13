@@ -117,3 +117,9 @@ func WriteRawMessageBatch(ctx context.Context, messages ...Message) (uint32, err
 	checkDefaultHubInstance()
 	return DefaultHub.WriteRawMessageBatch(ctx, messages...)
 }
+
+// GetStreamReaderNodes retrieves ReaderNode(s) from a stream.
+func GetStreamReaderNodes(stream string) []ReaderNode {
+	checkDefaultHubInstance()
+	return DefaultHub.GetStreamReaderNodes(stream)
+}

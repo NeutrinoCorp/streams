@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/neutrinocorp/streams"
 	"github.com/stretchr/testify/assert"
 )
@@ -467,5 +469,34 @@ func BenchmarkHub_WritePreBuildRawMessage(b *testing.B) {
 		if err != nil {
 			panic(err)
 		}
+	}
+}
+
+func TestHub_GetStreamReaderNodes(t *testing.T) {
+	hub := streams.NewHub()
+	hub.RegisterStream(fooEvent{}, streams.StreamMetadata{
+		Stream: "foo",
+	})
+	_ = hub.Read(fooEvent{}, streams.WithGroup("foo"))
+	_ = hub.Read(fooEvent{}, streams.WithGroup("bar"))
+	_ = hub.Read(fooEvent{}, streams.WithGroup("baz"))
+	res := hub.GetStreamReaderNodes("foo")
+	require.Len(t, res, 3)
+	assert.Equal(t, "foo", res[0].Group)
+}
+
+func BenchmarkHub_GetStreamReaderNodes(b *testing.B) {
+	hub := streams.NewHub()
+	hub.RegisterStream(fooEvent{}, streams.StreamMetadata{
+		Stream: "foo",
+	})
+	_ = hub.Read(fooEvent{})
+	_ = hub.Read(fooEvent{}, streams.WithGroup("bar"))
+	_ = hub.Read(fooEvent{}, streams.WithGroup("baz"))
+	_ = hub.Read(fooEvent{}, streams.WithGroup("foobar"))
+	_ = hub.Read(fooEvent{}, streams.WithGroup("lorem"))
+	for i := 0; i < b.N; i++ {
+		b.ReportAllocs()
+		_ = hub.GetStreamReaderNodes("foo")
 	}
 }
