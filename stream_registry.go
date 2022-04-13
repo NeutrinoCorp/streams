@@ -12,7 +12,11 @@ var ErrMissingStream = errors.New("streams: Missing stream entry in stream regis
 
 // StreamMetadata contains information of stream messages.
 type StreamMetadata struct {
-	Stream               string
+	// Stream destination stream name (aka. topic)
+	Stream string
+	// StreamVersion destination stream major version. Useful when non-backwards compatible schema update is desired.
+	StreamVersion int
+	// SchemaDefinitionName
 	SchemaDefinitionName string
 	SchemaVersion        int
 	GoType               reflect2.Type

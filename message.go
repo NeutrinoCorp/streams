@@ -16,12 +16,15 @@ const CloudEventsSpecVersion = "1.0"
 //
 // For more information, please look: https://github.com/cloudevents/spec
 type Message struct {
-	ID          string `json:"id"`
-	Stream      string `json:"stream"`
-	Source      string `json:"source"`
-	SpecVersion string `json:"specversion"`
-	Type        string `json:"type"`
-	Data        []byte `json:"data"`
+	// Stream name of destination stream (aka. topic)
+	Stream string `json:"stream"`
+	// StreamVersion destination stream major version. Useful when non-backwards compatible schema update is desired.
+	StreamVersion int    `json:"stream_version"`
+	ID            string `json:"id"`
+	Source        string `json:"source"`
+	SpecVersion   string `json:"specversion"`
+	Type          string `json:"type"`
+	Data          []byte `json:"data"`
 
 	// Optional fields
 
@@ -36,8 +39,13 @@ type Message struct {
 	CausationID   string `json:"causation_id"`
 
 	// consumer-only fields
+
+	// DecodedData data decoded using unmarshalling ReaderBehaviour component. This field is ONLY available for usage
+	// from ReaderNode(s).
 	DecodedData interface{} `json:"-"`
-	GroupName   string      `json:"-"`
+	// GroupName name of the reader group (aka. consumer group). This field is ONLY available for usage
+	// from ReaderNode(s).
+	GroupName string `json:"-"`
 }
 
 // NewMessageArgs arguments required by NewMessage function to operate.
@@ -47,6 +55,7 @@ type NewMessageArgs struct {
 	ID                   string
 	Source               string
 	Stream               string
+	StreamVersion        int
 	SchemaDefinitionName string
 	ContentType          string
 	GroupName            string
@@ -55,13 +64,13 @@ type NewMessageArgs struct {
 
 // NewMessage allocates an immutable Message ready to be transported in a stream.
 func NewMessage(args NewMessageArgs) Message {
-	strSchemaVersion := strconv.Itoa(args.SchemaVersion)
 	return Message{
 		ID:                args.ID,
 		Stream:            args.Stream,
+		StreamVersion:     args.StreamVersion,
 		Source:            args.Source,
 		SpecVersion:       CloudEventsSpecVersion,
-		Type:              generateMessageType(args.Source, args.Stream, strSchemaVersion),
+		Type:              newMessageType(args.Source, args.Stream, strconv.Itoa(args.StreamVersion)),
 		Data:              args.Data,
 		DataContentType:   args.ContentType,
 		DataSchema:        args.SchemaDefinitionName,
@@ -72,9 +81,12 @@ func NewMessage(args NewMessageArgs) Message {
 	}
 }
 
-func generateMessageType(source, stream, version string) string {
-	var buff strings.Builder
-	if source != "" && !strings.HasPrefix(stream, source) {
+func newMessageType(source, stream, version string) string {
+	buff := strings.Builder{}
+	sourceHasPrefix := strings.HasPrefix(stream, source)
+	buffSize := calculateMessageTypeBufferSize(len(source), len(stream), len(version), !sourceHasPrefix)
+	buff.Grow(buffSize)
+	if source != "" && !sourceHasPrefix {
 		buff.WriteString(source)
 		buff.WriteString(".")
 	}
@@ -84,4 +96,17 @@ func generateMessageType(source, stream, version string) string {
 		buff.WriteString(version)
 	}
 	return buff.String()
+}
+
+func calculateMessageTypeBufferSize(source, stream, version int, useSource bool) int {
+	buffSize := stream + version
+	if version > 0 {
+		// version will add ".v" extra chars to buffer
+		buffSize += 2
+	}
+	if source > 0 && useSource {
+		// source will add '.' extra char to buffer
+		buffSize += source + 1
+	}
+	return buffSize
 }

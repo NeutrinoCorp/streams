@@ -203,6 +203,7 @@ func (h *Hub) buildTransportMessage(ctx context.Context, metadata StreamMetadata
 		ID:                   id,
 		Source:               h.InstanceName,
 		Stream:               metadata.Stream,
+		StreamVersion:        metadata.StreamVersion,
 		SchemaDefinitionName: metadata.SchemaDefinitionName,
 		ContentType:          h.Marshaler.ContentType(),
 	})
