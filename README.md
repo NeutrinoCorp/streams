@@ -3,6 +3,7 @@
 ![Go Build](https://github.com/NeutrinoCorp/streams/actions/workflows/go-testing.yml/badge.svg)
 [![GoDoc](https://pkg.go.dev/badge/github.com/neutrinocorp/streams)][godocs]
 [![Go Report Card](https://goreportcard.com/badge/github.com/neutrinocorp/streams)](https://goreportcard.com/report/github.com/neutrinocorp/streams)
+[![codebeat badge](https://codebeat.co/badges/2925d1e2-dbe0-4571-ba3c-0752db2b7e48)](https://codebeat.co/projects/github-com-neutrinocorp-streams-master)
 [![Coverage Status][cov-img]][cov]
 [![Go Version][go-img]][go]
 
