@@ -16,7 +16,9 @@ func TestApi(t *testing.T) {
 		assert.Equal(t, streams.ErrNilDefaultHub, err)
 	}()
 	streams.DefaultHub = streams.NewHub()
-	streams.RegisterStream(fooEvent{}, streams.StreamMetadata{})
+	streams.RegisterStream(fooEvent{}, streams.StreamMetadata{
+		Stream: "foo",
+	})
 	streams.RegisterStreamByString("", streams.StreamMetadata{})
 	_ = streams.Read(fooEvent{})
 	streams.ReadByStreamKey("")
@@ -27,6 +29,7 @@ func TestApi(t *testing.T) {
 	_ = streams.WriteRawMessage(nil, streams.Message{})
 	_, _ = streams.WriteRawMessageBatch(nil, streams.Message{})
 	_ = streams.GetStreamReaderNodes("")
+	require.Len(t, streams.GetStreamReaderNodes("foo"), 1)
 	streams.Start(nil)
 	streams.DefaultHub = nil
 	_ = streams.Read(nil)

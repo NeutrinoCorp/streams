@@ -3,6 +3,8 @@ package streams
 import (
 	"context"
 	"time"
+
+	"github.com/emirpasic/gods/lists/singlylinkedlist"
 )
 
 var (
@@ -20,14 +22,14 @@ var (
 
 type readerSupervisor struct {
 	parentHub          *Hub
-	readerRegistry     readerRegistry
+	readerRegistry     map[string]*singlylinkedlist.List
 	baseReaderNodeOpts []ReaderNodeOption
 }
 
 func newReaderSupervisor(h *Hub) *readerSupervisor {
 	return &readerSupervisor{
 		parentHub:          h,
-		readerRegistry:     make(map[string][]ReaderNode),
+		readerRegistry:     map[string]*singlylinkedlist.List{},
 		baseReaderNodeOpts: h.ReaderBaseOptions,
 	}
 }
@@ -52,7 +54,7 @@ func (s *readerSupervisor) forkNode(stream string, opts ...ReaderNodeOption) {
 		o.apply(&baseOpts)
 	}
 
-	node := &ReaderNode{
+	node := ReaderNode{
 		Stream:                stream,
 		HandlerFunc:           s.ReaderHandleFunc(baseOpts),
 		Group:                 baseOpts.group,
@@ -64,8 +66,15 @@ func (s *readerSupervisor) forkNode(stream string, opts ...ReaderNodeOption) {
 		Reader:                baseOpts.driver,
 		MaxHandlerPoolSize:    baseOpts.maxHandlerPoolSize,
 	}
-	node.HandlerFunc = s.attachDefaultBehaviours(node)
-	s.readerRegistry[stream] = append(s.readerRegistry[stream], *node)
+	node.HandlerFunc = s.attachDefaultBehaviours(&node)
+
+	list, ok := s.readerRegistry[stream]
+	if !ok || list == nil {
+		list = singlylinkedlist.New()
+	}
+
+	list.Add(node)
+	s.readerRegistry[stream] = list
 }
 
 func (s *readerSupervisor) ReaderHandleFunc(baseOpts readerNodeOptions) ReaderHandleFunc {
@@ -94,9 +103,10 @@ func (s *readerSupervisor) attachDefaultBehaviours(node *ReaderNode) ReaderHandl
 
 // startNodes boots up all nodes from the readerSupervisor's ReaderRegistry.
 func (s *readerSupervisor) startNodes(ctx context.Context) {
-	for _, nodes := range s.readerRegistry {
-		for _, node := range nodes {
-			node.start(ctx)
+	for _, list := range s.readerRegistry {
+		for _, item := range list.Values() {
+			readerNode := item.(ReaderNode)
+			readerNode.start(ctx)
 		}
 	}
 }

@@ -481,8 +481,10 @@ func TestHub_GetStreamReaderNodes(t *testing.T) {
 	_ = hub.Read(fooEvent{}, streams.WithGroup("bar"))
 	_ = hub.Read(fooEvent{}, streams.WithGroup("baz"))
 	res := hub.GetStreamReaderNodes("foo")
-	require.Len(t, res, 3)
-	assert.Equal(t, "foo", res[0].Group)
+	require.Equal(t, 3, res.Size())
+	itemInterface, _ := res.Get(0)
+	item := itemInterface.(streams.ReaderNode)
+	assert.Equal(t, "foo", item.Group)
 }
 
 func BenchmarkHub_GetStreamReaderNodes(b *testing.B) {

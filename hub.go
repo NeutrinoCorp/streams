@@ -2,6 +2,8 @@ package streams
 
 import (
 	"context"
+
+	"github.com/emirpasic/gods/lists/singlylinkedlist"
 )
 
 var (
@@ -31,7 +33,7 @@ func NewHub(opts ...HubOption) *Hub {
 		o.apply(&baseOpts)
 	}
 	h := &Hub{
-		StreamRegistry:    StreamRegistry{},
+		StreamRegistry:    NewStreamRegistry(),
 		InstanceName:      baseOpts.instanceName,
 		Marshaler:         baseOpts.marshaler,
 		Writer:            baseOpts.writer,
@@ -57,8 +59,12 @@ func newHubDefaults() hubOptions {
 }
 
 // GetStreamReaderNodes retrieves ReaderNode(s) from a stream.
-func (h *Hub) GetStreamReaderNodes(stream string) []ReaderNode {
-	return h.readerSupervisor.readerRegistry[stream]
+func (h *Hub) GetStreamReaderNodes(stream string) *singlylinkedlist.List {
+	list, ok := h.readerSupervisor.readerRegistry[stream]
+	if !ok {
+		return nil
+	}
+	return list
 }
 
 // RegisterStream creates a relation between a stream message type and metadata.

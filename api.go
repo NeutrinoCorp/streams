@@ -121,5 +121,14 @@ func WriteRawMessageBatch(ctx context.Context, messages ...Message) (uint32, err
 // GetStreamReaderNodes retrieves ReaderNode(s) from a stream.
 func GetStreamReaderNodes(stream string) []ReaderNode {
 	checkDefaultHubInstance()
-	return DefaultHub.GetStreamReaderNodes(stream)
+	list := DefaultHub.GetStreamReaderNodes(stream)
+	if list == nil {
+		return nil
+	}
+	res := make([]ReaderNode, 0, list.Size())
+	for _, item := range list.Values() {
+		node := item.(ReaderNode)
+		res = append(res, node)
+	}
+	return res
 }

@@ -5,89 +5,113 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/stretchr/testify/assert"
 )
 
 func TestWithHandler(t *testing.T) {
 	opt := WithHandler(ReaderHandlerNoop{})
-	assert.Implements(t, (*ReaderNodeOption)(nil), opt)
+	require.Implements(t, (*ReaderNodeOption)(nil), opt)
 
 	hub := NewHub()
 	hub.ReadByStreamKey("foo", opt)
-	assert.NotNil(t,
-		hub.readerSupervisor.readerRegistry["foo"][0].HandlerFunc)
+	itemInterface, _ := hub.readerSupervisor.readerRegistry["foo"].Get(0)
+	item := itemInterface.(ReaderNode)
+	require.NotNil(t,
+		item.HandlerFunc)
 
 	hub.ReadByStreamKey("bar")
+	itemInterface, _ = hub.readerSupervisor.readerRegistry["bar"].Get(0)
+	item = itemInterface.(ReaderNode)
 	assert.Nil(t,
-		hub.readerSupervisor.readerRegistry["bar"][0].HandlerFunc)
+		item.HandlerFunc)
 }
 
 func TestWithHandlerFunc(t *testing.T) {
 	opt := WithHandlerFunc(func(_ context.Context, _ Message) error {
 		return nil
 	})
-	assert.Implements(t, (*ReaderNodeOption)(nil), opt)
+	require.Implements(t, (*ReaderNodeOption)(nil), opt)
 
 	hub := NewHub()
 	hub.ReadByStreamKey("foo", opt)
-	assert.NotNil(t, hub.readerSupervisor.readerRegistry["foo"][0].HandlerFunc)
+
+	itemInterface, _ := hub.readerSupervisor.readerRegistry["foo"].Get(0)
+	item := itemInterface.(ReaderNode)
+	require.NotNil(t, item.HandlerFunc)
 
 	hub.ReadByStreamKey("bar")
-	assert.Nil(t,
-		hub.readerSupervisor.readerRegistry["bar"][0].HandlerFunc)
+	itemInterface, _ = hub.readerSupervisor.readerRegistry["bar"].Get(0)
+	item = itemInterface.(ReaderNode)
+	assert.Nil(t, item.HandlerFunc)
 }
 
 func TestWithGroup(t *testing.T) {
 	opt := WithGroup("bar-job")
-	assert.Implements(t, (*ReaderNodeOption)(nil), opt)
+	require.Implements(t, (*ReaderNodeOption)(nil), opt)
 
 	hub := NewHub()
 	hub.ReadByStreamKey("foo", opt)
-	assert.Equal(t, "bar-job", hub.readerSupervisor.readerRegistry["foo"][0].Group)
+	itemInterface, _ := hub.readerSupervisor.readerRegistry["foo"].Get(0)
+	item := itemInterface.(ReaderNode)
+	assert.Equal(t, "bar-job", item.Group)
 }
 
 func TestWithConcurrencyLevel(t *testing.T) {
 	opt := WithConcurrencyLevel(-1)
-	assert.Implements(t, (*ReaderNodeOption)(nil), opt)
+	require.Implements(t, (*ReaderNodeOption)(nil), opt)
 
 	hub := NewHub()
 	hub.ReadByStreamKey("foo", opt)
-	assert.Equal(t, 1, hub.readerSupervisor.readerRegistry["foo"][0].ConcurrencyLevel)
+	itemInterface, _ := hub.readerSupervisor.readerRegistry["foo"].Get(0)
+	item := itemInterface.(ReaderNode)
+	require.Equal(t, 1, item.ConcurrencyLevel)
 
 	opt = WithConcurrencyLevel(0)
 	hub.ReadByStreamKey("bar", opt)
-	assert.Equal(t, 1, hub.readerSupervisor.readerRegistry["bar"][0].ConcurrencyLevel)
+	itemInterface, _ = hub.readerSupervisor.readerRegistry["bar"].Get(0)
+	item = itemInterface.(ReaderNode)
+	require.Equal(t, 1, item.ConcurrencyLevel)
 
 	opt = WithConcurrencyLevel(2)
 	hub.ReadByStreamKey("bar", opt)
-	assert.Equal(t, 2, hub.readerSupervisor.readerRegistry["bar"][1].ConcurrencyLevel)
+	itemInterface, _ = hub.readerSupervisor.readerRegistry["bar"].Get(1)
+	item = itemInterface.(ReaderNode)
+	assert.Equal(t, 2, item.ConcurrencyLevel)
 }
 
 func TestWithRetryInitialInterval(t *testing.T) {
 	opt := WithRetryInitialInterval(time.Second * 5)
-	assert.Implements(t, (*ReaderNodeOption)(nil), opt)
+	require.Implements(t, (*ReaderNodeOption)(nil), opt)
 
 	hub := NewHub()
 	hub.ReadByStreamKey("foo", opt)
-	assert.EqualValues(t, time.Second*5, hub.readerSupervisor.readerRegistry["foo"][0].RetryInitialInterval)
+	itemInterface, _ := hub.readerSupervisor.readerRegistry["foo"].Get(0)
+	item := itemInterface.(ReaderNode)
+	assert.EqualValues(t, time.Second*5, item.RetryInitialInterval)
 }
 
 func TestWithRetryMaxInterval(t *testing.T) {
 	opt := WithRetryMaxInterval(time.Second * 5)
-	assert.Implements(t, (*ReaderNodeOption)(nil), opt)
+	require.Implements(t, (*ReaderNodeOption)(nil), opt)
 
 	hub := NewHub()
 	hub.ReadByStreamKey("foo", opt)
-	assert.EqualValues(t, time.Second*5, hub.readerSupervisor.readerRegistry["foo"][0].RetryMaxInterval)
+	itemInterface, _ := hub.readerSupervisor.readerRegistry["foo"].Get(0)
+	item := itemInterface.(ReaderNode)
+	assert.EqualValues(t, time.Second*5, item.RetryMaxInterval)
 }
 
 func TestWithRetryTimeout(t *testing.T) {
 	opt := WithRetryTimeout(time.Second * 5)
-	assert.Implements(t, (*ReaderNodeOption)(nil), opt)
+	require.Implements(t, (*ReaderNodeOption)(nil), opt)
 
 	hub := NewHub()
 	hub.ReadByStreamKey("foo", opt)
-	assert.EqualValues(t, time.Second*5, hub.readerSupervisor.readerRegistry["foo"][0].RetryTimeout)
+	itemInterface, _ := hub.readerSupervisor.readerRegistry["foo"].Get(0)
+	item := itemInterface.(ReaderNode)
+	assert.EqualValues(t, time.Second*5, item.RetryTimeout)
 }
 
 type fakeProviderCfg struct {
@@ -98,38 +122,48 @@ func TestWithProviderConfiguration(t *testing.T) {
 	opt := WithProviderConfiguration(fakeProviderCfg{
 		Foo: "foo",
 	})
-	assert.Implements(t, (*ReaderNodeOption)(nil), opt)
+	require.Implements(t, (*ReaderNodeOption)(nil), opt)
 
 	hub := NewHub()
 	hub.ReadByStreamKey("foo", opt)
+	itemInterface, _ := hub.readerSupervisor.readerRegistry["foo"].Get(0)
+	item := itemInterface.(ReaderNode)
 	assert.EqualValues(t, fakeProviderCfg{
 		Foo: "foo",
-	}, hub.readerSupervisor.readerRegistry["foo"][0].ProviderConfiguration)
+	}, item.ProviderConfiguration)
 }
 
 func TestWithDriver(t *testing.T) {
 	opt := WithDriver(readerNoop{})
-	assert.Implements(t, (*ReaderNodeOption)(nil), opt)
+	require.Implements(t, (*ReaderNodeOption)(nil), opt)
 
 	hub := NewHub()
 	hub.ReadByStreamKey("foo", opt)
+	itemInterface, _ := hub.readerSupervisor.readerRegistry["foo"].Get(0)
+	item := itemInterface.(ReaderNode)
 	assert.EqualValues(t, readerNoop{},
-		hub.readerSupervisor.readerRegistry["foo"][0].Reader)
+		item.Reader)
 }
 
 func TestWithMaxHandlerPoolSize(t *testing.T) {
 	opt := WithMaxHandlerPoolSize(-1)
-	assert.Implements(t, (*ReaderNodeOption)(nil), opt)
+	require.Implements(t, (*ReaderNodeOption)(nil), opt)
 
 	hub := NewHub()
 	hub.ReadByStreamKey("foo", opt)
-	assert.Equal(t, DefaultMaxHandlerPoolSize, hub.readerSupervisor.readerRegistry["foo"][0].MaxHandlerPoolSize)
+	itemInterface, _ := hub.readerSupervisor.readerRegistry["foo"].Get(0)
+	item := itemInterface.(ReaderNode)
+	assert.Equal(t, DefaultMaxHandlerPoolSize, item.MaxHandlerPoolSize)
 
 	opt = WithMaxHandlerPoolSize(0)
 	hub.ReadByStreamKey("bar", opt)
-	assert.Equal(t, DefaultMaxHandlerPoolSize, hub.readerSupervisor.readerRegistry["bar"][0].MaxHandlerPoolSize)
+	itemInterface, _ = hub.readerSupervisor.readerRegistry["bar"].Get(0)
+	item = itemInterface.(ReaderNode)
+	assert.Equal(t, DefaultMaxHandlerPoolSize, item.MaxHandlerPoolSize)
 
 	opt = WithMaxHandlerPoolSize(2)
 	hub.ReadByStreamKey("bar", opt)
-	assert.Equal(t, 2, hub.readerSupervisor.readerRegistry["bar"][1].MaxHandlerPoolSize)
+	itemInterface, _ = hub.readerSupervisor.readerRegistry["bar"].Get(1)
+	item = itemInterface.(ReaderNode)
+	assert.Equal(t, 2, item.MaxHandlerPoolSize)
 }
