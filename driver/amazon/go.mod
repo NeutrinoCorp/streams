@@ -10,7 +10,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sns v1.17.4
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.18.3
 	github.com/json-iterator/go v1.1.12
-	github.com/neutrinocorp/streams v0.2.4
+	github.com/neutrinocorp/streams v0.2.5
 	github.com/stretchr/testify v1.7.0
 )
 
@@ -26,6 +26,7 @@ require (
 	github.com/aws/smithy-go v1.11.2 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/hamba/avro v1.6.3 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
@@ -36,4 +37,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )
 
-replace github.com/neutrinocorp/streams => ../../
+// replace github.com/neutrinocorp/streams => ../../

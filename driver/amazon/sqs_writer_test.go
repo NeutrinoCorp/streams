@@ -58,7 +58,7 @@ func (s *SqsWriterSuite) createSqsQueues() {
 			out, errScoped := s.client.CreateQueue(ctx, &sqs.CreateQueueInput{
 				QueueName: aws.String(sqsQueues[index]),
 			})
-			if errScoped != nil && !strings.Contains(errScoped.Error(), "TopicAlreadyExists") {
+			if errScoped != nil && !strings.Contains(errScoped.Error(), "QueueAlreadyExists") {
 				err = errScoped
 				return
 			}

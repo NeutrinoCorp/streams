@@ -5,6 +5,9 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
+
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/neutrinocorp/streams"
 )
@@ -39,20 +42,36 @@ func (s SqsWriter) Write(ctx context.Context, message streams.Message) error {
 }
 
 func (s SqsWriter) WriteBatch(ctx context.Context, messages ...streams.Message) (published uint32, err error) {
-	// Important NOTE: We cannot use AWS API's PublishBatch func as it delivers messages to only one queue target.
-	// Each message from this function (SqsWriter.WriteBatch()) contains a `stream` field which is the queue target in
-	// this case, hence the batch MIGHT contain multiple streams to target to.
-	wg := sync.WaitGroup{}
-	wg.Add(len(messages))
+	// Map each stream from `messages` to a batch.
+	//
+	// Therefore, publish each batch to its requested stream.
+	batchBuffer := map[string][]types.SendMessageBatchRequestEntry{}
 	for _, msg := range messages {
-		go func(message streams.Message) {
+		rawJSON, errScoped := MarshalMessage(msg)
+		if errScoped != nil {
+			err = errScoped
+			return
+		}
+		batchBuffer[msg.Stream] = append(batchBuffer[msg.Stream], types.SendMessageBatchRequestEntry{
+			Id:          aws.String(msg.ID),
+			MessageBody: rawJSON,
+		})
+	}
+
+	wg := sync.WaitGroup{}
+	wg.Add(len(batchBuffer))
+	for stream, batch := range batchBuffer {
+		go func(stream string, messages []types.SendMessageBatchRequestEntry) {
 			defer wg.Done()
-			if errScoped := s.Write(ctx, message); errScoped != nil {
-				err = errScoped
+			_, err = s.client.SendMessageBatch(ctx, &sqs.SendMessageBatchInput{
+				Entries:  messages,
+				QueueUrl: NewQueueUrl(s.region, s.accountID, stream),
+			})
+			if err != nil {
 				return
 			}
 			atomic.AddUint32(&published, 1)
-		}(msg)
+		}(stream, batch)
 	}
 	wg.Wait()
 	return
