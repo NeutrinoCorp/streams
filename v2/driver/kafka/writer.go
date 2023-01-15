@@ -26,7 +26,7 @@ func (k SyncWriter) Write(ctx context.Context, p streams.Message) (int, error) {
 func (k SyncWriter) WriteMany(_ context.Context, p []streams.Message) (n int, err error) {
 	msgs := make([]*sarama.ProducerMessage, 0, len(p))
 	for _, msg := range p {
-		kMsg := newKMessage(msg)
+		kMsg := newKProducerMessage(msg)
 		msgs = append(msgs, &kMsg)
 		n += kMsg.Value.Length()
 	}
@@ -71,7 +71,7 @@ func (k AsyncWriter) WriteMany(_ context.Context, p []streams.Message) (n int, e
 	}()
 
 	for _, msg := range p {
-		kMsg := newKMessage(msg)
+		kMsg := newKProducerMessage(msg)
 		k.client.Input() <- &kMsg
 	}
 

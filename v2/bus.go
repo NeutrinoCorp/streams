@@ -6,13 +6,24 @@ type Bus struct {
 	*StreamRegistry
 }
 
-func NewBus(w Writer, r Reader) Bus {
+func NewBus(w Writer, r Reader, opts ...BusOption) Bus {
+	baseCfg := busOpts{
+		publisherOpts: newDefaultPublisherOpts(),
+	}
+	for _, o := range opts {
+		o.applyBus(&baseCfg)
+	}
+
 	reg := NewStreamRegistry()
-	return Bus{
-		Publisher: NewPublisher(
-			WithWriter(w),
-			WithRegistry(reg)),
+	b := Bus{
+		Publisher: Publisher{
+			writer:        w,
+			codec:         baseCfg.codec,
+			idFactoryFunc: baseCfg.idFactory,
+			reg:           reg,
+		},
 		SubscriberSupervisor: NewSubscriberSupervisor(reg, r),
 		StreamRegistry:       reg,
 	}
+	return b
 }

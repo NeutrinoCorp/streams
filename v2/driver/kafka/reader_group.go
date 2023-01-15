@@ -3,7 +3,6 @@ package kafka
 import (
 	"context"
 	"log"
-	"strconv"
 	"sync"
 
 	"github.com/Shopify/sarama"
@@ -29,39 +28,22 @@ func (k kafkaConsumerGroupHandler) Cleanup(_ sarama.ConsumerGroupSession) error 
 
 func (k kafkaConsumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	for msg := range claim.Messages() {
-		msgMetadataMap := map[string]string{}
-		headers := map[string]string{
-			HeaderKey:                         string(msg.Key),
-			HeaderOffset:                      strconv.FormatInt(msg.Offset, 10),
-			HeaderPartition:                   strconv.FormatInt(int64(msg.Partition), 10),
-			HeaderConsumerGroupName:           k.groupName,
-			HeaderConsumerMemberID:            session.MemberID(),
-			HeaderConsumerGenerationID:        strconv.FormatInt(int64(session.GenerationID()), 10),
-			HeaderConsumerInitialOffset:       strconv.FormatInt(claim.InitialOffset(), 10),
-			HeaderConsumerHighWatermarkOffset: strconv.FormatInt(claim.HighWaterMarkOffset(), 10),
-		}
-		for _, h := range msg.Headers {
-			key := string(h.Key)
-			val := string(h.Value)
-			if _, ok := streams.HeaderSet[key]; ok {
-				msgMetadataMap[key] = val
-				continue
-			}
-			headers[key] = val
-		}
+		streamMsg := newKConsumerMessage(newKConsumerMessageArgs{
+			Key:                 msg.Key,
+			Offset:              msg.Offset,
+			InitialOffset:       claim.InitialOffset(),
+			HighWaterMarkOffset: claim.HighWaterMarkOffset(),
+			Partition:           msg.Partition,
+			GenerationID:        session.GenerationID(),
+			MemberID:            session.MemberID(),
+			GroupName:           k.groupName,
+			Headers:             msg.Headers,
+			Value:               msg.Value,
+			Timestamp:           msg.Timestamp,
+		})
 
 		scopedCtx, cancel := context.WithCancel(session.Context())
-		if err := k.subFunc(scopedCtx, streams.Message{
-			ID:              msgMetadataMap[streams.HeaderMessageID],
-			CorrelationID:   msgMetadataMap[streams.HeaderCorrelationID],
-			CausationID:     msgMetadataMap[streams.HeaderCausationID],
-			StreamName:      msgMetadataMap[streams.HeaderStreamName],
-			ContentType:     msgMetadataMap[streams.HeaderContentType],
-			SchemaURL:       msgMetadataMap[streams.HeaderSchemaURL],
-			Data:            msg.Value,
-			TimestampMillis: msg.Timestamp.UnixMilli(),
-			Headers:         headers,
-		}); err != nil {
+		if err := k.subFunc(scopedCtx, streamMsg); err != nil {
 			cancel()
 			continue
 		}
@@ -77,9 +59,30 @@ type ReaderGroup struct {
 	handlerPool *sync.Pool
 }
 
-func NewReaderGroup(groupID string, c sarama.ConsumerGroup) ReaderGroup {
+var _ streams.Reader = ReaderGroup{}
+
+func NewReaderGroup(groupID string, cfg *sarama.Config, clusterAddrs ...string) (ReaderGroup, error) {
+	kConsumerGroup, err := sarama.NewConsumerGroup(clusterAddrs, groupID, cfg)
+	if err != nil {
+		return ReaderGroup{}, err
+	}
 	return ReaderGroup{
-		client: c,
+		groupID: groupID,
+		client:  kConsumerGroup,
+		handlerPool: &sync.Pool{
+			New: func() interface{} {
+				return kafkaConsumerGroupHandler{
+					groupName: groupID,
+				}
+			},
+		},
+	}, nil
+}
+
+func NewReaderGroupFromClient(groupID string, c sarama.ConsumerGroup) ReaderGroup {
+	return ReaderGroup{
+		groupID: groupID,
+		client:  c,
 		handlerPool: &sync.Pool{
 			New: func() interface{} {
 				return kafkaConsumerGroupHandler{
@@ -90,29 +93,29 @@ func NewReaderGroup(groupID string, c sarama.ConsumerGroup) ReaderGroup {
 	}
 }
 
+func (r ReaderGroup) Close() error {
+	return r.client.Close()
+}
+
 func (r ReaderGroup) Read(ctx context.Context, stream string, subscriberFunc streams.SubscriberFunc) (err error) {
 	handler := r.handlerPool.Get().(kafkaConsumerGroupHandler)
 	defer func() {
 		r.handlerPool.Put(handler)
 	}()
 	handler.subFunc = subscriberFunc
-	go func() {
-		for {
-			if errConsumer := r.client.Consume(ctx, []string{stream}, handler); errConsumer != nil &&
-				errConsumer != sarama.ErrClosedConsumerGroup {
-				err = errConsumer
-				break
-			}
-			select {
-			case <-r.client.Errors():
-				continue
-			}
+	for {
+		if errConsumer := r.client.Consume(ctx, []string{stream}, handler); errConsumer != nil &&
+			errConsumer != sarama.ErrClosedConsumerGroup {
+			err = errConsumer
+			break
 		}
-	}()
-
-	select {
-	case <-ctx.Done():
-		log.Print("closing reader")
-		return
+		select {
+		case <-ctx.Done():
+			log.Print("closing reader")
+			return
+		case <-r.client.Errors():
+			continue
+		}
 	}
+	return err
 }

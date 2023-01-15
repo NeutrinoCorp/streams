@@ -22,7 +22,7 @@ func newDefaultPublisherOpts() publisherOpts {
 func NewPublisher(opts ...PublisherOption) Publisher {
 	baseCfg := newDefaultPublisherOpts()
 	for _, o := range opts {
-		o.apply(&baseCfg)
+		o.applyPublisher(&baseCfg)
 	}
 	return Publisher{
 		writer:        baseCfg.writer,

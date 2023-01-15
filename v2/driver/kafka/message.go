@@ -9,7 +9,7 @@ import (
 	"github.com/neutrinocorp/streams/v2"
 )
 
-func newKMessage(msg streams.Message) sarama.ProducerMessage {
+func newKProducerMessage(msg streams.Message) sarama.ProducerMessage {
 	key := msg.ID
 	if k, ok := msg.Headers[HeaderKey]; ok {
 		key = k
@@ -36,5 +36,54 @@ func newKMessage(msg streams.Message) sarama.ProducerMessage {
 		Offset:    offset,
 		Partition: int32(partition),
 		Timestamp: time.UnixMilli(msg.TimestampMillis),
+	}
+}
+
+type newKConsumerMessageArgs struct {
+	Key                 []byte
+	Offset              int64
+	InitialOffset       int64
+	HighWaterMarkOffset int64
+	Partition           int32
+	GenerationID        int32
+	MemberID            string
+	GroupName           string
+	Headers             []*sarama.RecordHeader
+	Value               []byte
+	Timestamp           time.Time
+}
+
+func newKConsumerMessage(args newKConsumerMessageArgs) streams.Message {
+	msgMetadataMap := map[string]string{}
+	headers := map[string]string{
+		HeaderKey:                         string(args.Key),
+		HeaderOffset:                      strconv.FormatInt(args.Offset, 10),
+		HeaderPartition:                   strconv.FormatInt(int64(args.Partition), 10),
+		HeaderConsumerGroupName:           args.GroupName,
+		HeaderConsumerMemberID:            args.MemberID,
+		HeaderConsumerGenerationID:        strconv.FormatInt(int64(args.GenerationID), 10),
+		HeaderConsumerInitialOffset:       strconv.FormatInt(args.InitialOffset, 10),
+		HeaderConsumerHighWatermarkOffset: strconv.FormatInt(args.HighWaterMarkOffset, 10),
+	}
+	for _, h := range args.Headers {
+		key := string(h.Key)
+		val := string(h.Value)
+		if _, ok := streams.HeaderSet[key]; ok {
+			msgMetadataMap[key] = val
+			continue
+		}
+		headers[key] = val
+	}
+
+	return streams.Message{
+		ID:              msgMetadataMap[streams.HeaderMessageID],
+		CorrelationID:   msgMetadataMap[streams.HeaderCorrelationID],
+		CausationID:     msgMetadataMap[streams.HeaderCausationID],
+		StreamName:      msgMetadataMap[streams.HeaderStreamName],
+		ContentType:     msgMetadataMap[streams.HeaderContentType],
+		SchemaURL:       msgMetadataMap[streams.HeaderSchemaURL],
+		Data:            args.Value,
+		TimestampMillis: args.Timestamp.UnixMilli(),
+		Headers:         headers,
 	}
 }

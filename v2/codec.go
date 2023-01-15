@@ -32,6 +32,7 @@ type Decoder interface {
 	Unmarshal(p []byte, v interface{}) error
 }
 
+// Codec converts given data types to a codec-specific data type and vice-versa.
 type Codec interface {
 	Encoder
 	Decoder
