@@ -21,23 +21,30 @@ type OrderPlaced struct {
 }
 
 func main() {
-	reg := streams.NewStreamRegistry()
-	reg.Set("neutrino.places.orders.placed.v1", OrderPlaced{},
-		streams.WithSchemaURL("events.docs.neutrinocorp.org/v1/orders#OrderPlaced"))
 	kClient, err := sarama.NewClient([]string{"localhost:9092"}, newSaramaConfig())
 	if err != nil {
 		panic(err)
 	}
-	// READER
+
 	kConsumerGroup, err := sarama.NewConsumerGroupFromClient("service-a", kClient)
 	if err != nil {
 		panic(err)
 	}
 	defer kConsumerGroup.Close()
 
-	supervisor := streams.NewSubscriberSupervisor(reg, kafka.NewReaderGroup("service-a", kConsumerGroup))
-	defer supervisor.Shutdown()
-	supervisor.RegisterSubscriber(OrderPlaced{}, func(ctx context.Context, msg streams.Message) error {
+	kProd, err := sarama.NewAsyncProducerFromClient(kClient)
+	if err != nil {
+		panic(err)
+	}
+	defer kProd.Close()
+
+	bus := streams.NewBus(kafka.NewAsyncWriter(kProd), kafka.NewReaderGroup("service-a", kConsumerGroup))
+	defer bus.Shutdown()
+	bus.Set("neutrino.places.orders.placed.v1", OrderPlaced{},
+		streams.WithSchemaURL("events.docs.neutrinocorp.org/v1/orders#OrderPlaced"))
+
+	// READER
+	bus.RegisterSubscriber(OrderPlaced{}, func(ctx context.Context, msg streams.Message) error {
 		order := msg.DecodedData.(OrderPlaced)
 		log.Printf("order_id:%s,user_id:%s,total:%f,currency_code:%s,ordered_at:%d", order.OrderID, order.UserID,
 			order.Total, order.CurrencyCode, order.OrderedAt)
@@ -47,18 +54,10 @@ func main() {
 			msg.Headers.Get(kafka.HeaderConsumerHighWatermarkOffset))
 		return nil
 	})
-	supervisor.Start()
+	bus.Start()
 	// PRODUCER
-	kProd, err := sarama.NewAsyncProducerFromClient(kClient)
-	if err != nil {
-		panic(err)
-	}
-	defer kProd.Close()
-	pub := streams.NewPublisher(
-		streams.WithRegistry(reg),
-		streams.WithWriter(kafka.NewAsyncWriter(kProd)))
 
-	out, err := pub.Publish(context.TODO(), streams.PublishMessageArgs{
+	out, err := bus.Publish(context.TODO(), streams.PublishMessageArgs{
 		Data: OrderPlaced{
 			OrderID:      uuid.NewString(),
 			UserID:       "aruiz",

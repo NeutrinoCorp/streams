@@ -2,8 +2,6 @@ package streams
 
 import (
 	"context"
-	"io"
-	"log"
 	"time"
 )
 
@@ -13,8 +11,6 @@ type Publisher struct {
 	idFactoryFunc IdentifierFactoryFunc
 	reg           *StreamRegistry
 }
-
-var _ io.Closer = Publisher{}
 
 func newDefaultPublisherOpts() publisherOpts {
 	return publisherOpts{
@@ -36,18 +32,8 @@ func NewPublisher(opts ...PublisherOption) Publisher {
 	}
 }
 
-func (p Publisher) Close() error {
-	log.Print("closing writer")
-	return p.writer.Close()
-}
-
-type PublishMessageArgs struct {
-	Data    interface{}
-	Headers map[string]string
-}
-
-func (p Publisher) newMessageFromPublish(msgPub PublishMessageArgs) (Message, error) {
-	metadata, err := p.reg.GetByType(msgPub.Data)
+func (p Publisher) newMessageFromPublish(msg interface{}, headers Headers) (Message, error) {
+	metadata, err := p.reg.GetByType(msg)
 	if err != nil {
 		return Message{}, err
 	}
@@ -57,7 +43,7 @@ func (p Publisher) newMessageFromPublish(msgPub PublishMessageArgs) (Message, er
 		return Message{}, err
 	}
 
-	data, err := p.codec.Marshal(msgPub.Data)
+	data, err := p.codec.Marshal(msg)
 	if err != nil {
 		return Message{}, err
 	}
@@ -71,8 +57,13 @@ func (p Publisher) newMessageFromPublish(msgPub PublishMessageArgs) (Message, er
 		SchemaURL:       metadata.SchemaURL,
 		TimestampMillis: time.Now().UTC().UnixMilli(),
 		Data:            data,
-		Headers:         msgPub.Headers,
+		Headers:         headers,
 	}, nil
+}
+
+type PublishMessageArgs struct {
+	Data    interface{}
+	Headers Headers
 }
 
 func (p Publisher) Publish(ctx context.Context, msgs ...PublishMessageArgs) (int, error) {
@@ -81,7 +72,7 @@ func (p Publisher) Publish(ctx context.Context, msgs ...PublishMessageArgs) (int
 
 func (p Publisher) PublishTo(w Writer, ctx context.Context, msgs ...PublishMessageArgs) (int, error) {
 	if len(msgs) == 1 {
-		msg, err := p.newMessageFromPublish(msgs[0])
+		msg, err := p.newMessageFromPublish(msgs[0].Data, msgs[0].Headers)
 		if err != nil {
 			return 0, err
 		}
@@ -90,7 +81,7 @@ func (p Publisher) PublishTo(w Writer, ctx context.Context, msgs ...PublishMessa
 
 	msgBuf := make([]Message, 0, len(msgs))
 	for _, msgPub := range msgs {
-		msg, err := p.newMessageFromPublish(msgPub)
+		msg, err := p.newMessageFromPublish(msgPub.Data, msgPub.Headers)
 		if err != nil {
 			return 0, err
 		}

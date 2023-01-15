@@ -37,10 +37,16 @@ func NewStreamRegistry() *StreamRegistry {
 	}
 }
 
-func (s StreamRegistry) Set(stream string, metadata StreamMetadata, message interface{}) {
-	metadata.Name = stream
-	metadata.GoType = reflect2.TypeOf(message)
-	metadata.TypeOf = metadata.GoType.String()
+func (s StreamRegistry) Set(stream string, message interface{}, opts ...StreamRegistryOption) {
+	typeof := reflect2.TypeOf(message)
+	metadata := StreamMetadata{
+		Name:   stream,
+		GoType: typeof,
+		TypeOf: typeof.String(),
+	}
+	for _, opt := range opts {
+		opt.apply(&metadata)
+	}
 	s.buf.Put(stream, metadata)
 }
 

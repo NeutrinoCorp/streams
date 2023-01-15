@@ -17,3 +17,9 @@ var HeaderSet = map[string]struct{}{
 	HeaderContentType:   {},
 	HeaderSchemaURL:     {},
 }
+
+type Headers map[string]string
+
+func (h Headers) Get(key string) string {
+	return h[key]
+}
